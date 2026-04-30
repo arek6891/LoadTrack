@@ -39,8 +39,24 @@ const authorize = (roles: string[]) => {
 };
 
 // Auth
-app.post('/api/auth/register', async (req, res) => {
+app.get('/api/users', authenticate, authorize(['ADMIN']), async (req: any, res: any) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true, role: true, createdAt: true }
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth/register', authenticate, authorize(['ADMIN']), async (req: any, res: any) => {
   const { username, password, role } = req.body;
+  
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
@@ -50,6 +66,41 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(201).json({ id: user.id, username: user.username, role: user.role });
   } catch (error) {
     res.status(400).json({ error: 'Username already exists' });
+  }
+});
+
+app.patch('/api/users/:id', authenticate, authorize(['ADMIN']), async (req: any, res: any) => {
+  const { id } = req.params;
+  const { role, password } = req.body;
+
+  try {
+    const data: any = {};
+    if (role) data.role = role;
+    if (password) data.password = await bcrypt.hash(password, 10);
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data,
+      select: { id: true, username: true, role: true }
+    });
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/users/:id', authenticate, authorize(['ADMIN']), async (req: any, res: any) => {
+  const { id } = req.params;
+  try {
+    // Zapobiegamy usunięciu samego siebie
+    if ((req.user as any).id === id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    await prisma.user.delete({ where: { id } });
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -258,6 +309,24 @@ app.get('/api/loadings', async (req, res) => {
   }
 });
 
+app.get('/api/loadings/history', authenticate, async (req, res) => {
+  try {
+    const history = await prisma.loading.findMany({
+      where: { status: 'CLOSED' },
+      include: { 
+        _count: { select: { pallets: true } },
+        pallets: {
+          include: { _count: { select: { packages: true } } }
+        }
+      },
+      orderBy: { closedAt: 'desc' }
+    });
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/api/loadings', async (req, res) => {
   const { driverName, vehicleRegistration } = req.body;
   if (!driverName || !vehicleRegistration) {
@@ -348,6 +417,112 @@ app.get('/api/search', async (req, res) => {
     }
 
     res.status(404).json({ error: 'Nie znaleziono paczki ani palety o tym numerze' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Stats & Dashboard
+app.get('/api/stats', authenticate, async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [
+      packageStats,
+      palletStats,
+      locationCount,
+      todayLoadings
+    ] = await Promise.all([
+      // Statystyki paczek wg statusu
+      prisma.package.groupBy({
+        by: ['status'],
+        _count: true
+      }),
+      // Statystyki palet wg statusu
+      prisma.pallet.groupBy({
+        by: ['status'],
+        _count: true
+      }),
+      // Liczba lokalizacji
+      prisma.location.count(),
+      // Dzisiejsze zamknięte załadunki
+      prisma.loading.findMany({
+        where: {
+          status: 'CLOSED',
+          closedAt: {
+            gte: today
+          }
+        },
+        include: {
+          _count: {
+            select: { pallets: true }
+          }
+        }
+      })
+    ]);
+
+    // Dodatkowe statystyki: zajętość lokalizacji
+    const occupiedLocations = await prisma.location.count({
+      where: {
+        OR: [
+          { packages: { some: {} } },
+          { pallets: { some: {} } }
+        ]
+      }
+    });
+
+    res.json({
+      packages: packageStats,
+      pallets: palletStats,
+      locations: {
+        total: locationCount,
+        occupied: occupiedLocations
+      },
+      today: {
+        closedLoadings: todayLoadings.length,
+        loadedPallets: todayLoadings.reduce((acc, curr) => acc + curr._count.pallets, 0)
+      }
+    });
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reports
+app.get('/api/reports/inventory', authenticate, async (req: any, res: any) => {
+  try {
+    const [packages, pallets] = await Promise.all([
+      prisma.package.findMany({
+        include: { pallet: true, location: true }
+      }),
+      prisma.pallet.findMany({
+        where: { packages: { none: {} } },
+        include: { location: true }
+      })
+    ]);
+
+    const reportData = [
+      ...packages.map(p => ({
+        type: 'PACZKA',
+        number: p.trackingNumber,
+        status: p.status,
+        parentPallet: p.pallet?.palletNumber || '-',
+        location: p.location?.name || '-',
+        createdAt: p.createdAt
+      })),
+      ...pallets.map(p => ({
+        type: 'PALETA',
+        number: p.palletNumber,
+        status: p.status,
+        parentPallet: 'N/A',
+        location: p.location?.name || '-',
+        createdAt: p.createdAt
+      }))
+    ];
+
+    res.json(reportData);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

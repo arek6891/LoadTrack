@@ -8,6 +8,10 @@ import StockMovement from './StockMovement';
 import LoadingManager from './LoadingManager';
 import Search from './Search';
 import Login from './Login';
+import AdminPanel from './AdminPanel';
+import Dashboard from './Dashboard';
+import LoadingHistory from './LoadingHistory';
+import InventoryReport from './InventoryReport';
 
 function App() {
   const [user, setUser] = useState<any>(null);
@@ -47,29 +51,39 @@ function App() {
       <div className="min-h-screen bg-gray-100 w-full">
         <header className="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center text-center">
           <div className="flex items-center space-x-4">
-            <Link to="/" className="text-xl font-bold">LoadTrack</Link>
+            <Link to="/menu" className="text-xl font-bold">LoadTrack</Link>
             <div className="hidden md:block text-xs bg-blue-700 px-2 py-1 rounded">
               {user?.username} ({user?.role})
             </div>
           </div>
           <nav className="flex space-x-2 md:space-x-4 overflow-x-auto">
+            <Link to="/" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Dashboard</Link>
             <Link to="/scanner" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Skaner</Link>
             <Link to="/pallets" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Palety</Link>
             <Link to="/move" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Ruchy</Link>
             <Link to="/loading" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Załadunek</Link>
+            <Link to="/history" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Historia</Link>
+            <Link to="/report" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Raport Stanu</Link>
             <Link to="/search" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Szukaj</Link>
+            {user?.role === 'ADMIN' && (
+              <Link to="/admin" className="text-xs md:text-sm bg-purple-700 hover:bg-purple-800 px-2 md:px-3 py-1 rounded font-bold">Admin</Link>
+            )}
             <button onClick={handleLogout} className="text-xs md:text-sm bg-red-500 hover:bg-red-600 px-2 md:px-3 py-1 rounded">Wyloguj</button>
           </nav>
         </header>
         <main className="p-4">
           <Routes>
-            <Route path="/" element={<Home role={user?.role} />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/menu" element={<Home role={user?.role} />} />
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/pallets" element={<PalletBuilder />} />
             <Route path="/move" element={<StockMovement />} />
             <Route path="/loading" element={<LoadingManager />} />
+            <Route path="/history" element={<LoadingHistory />} />
+            <Route path="/report" element={<InventoryReport />} />
             <Route path="/search" element={<Search userRole={user?.role} />} />
             <Route path="/locations" element={<Locations />} />
+            {user?.role === 'ADMIN' && <Route path="/admin" element={<AdminPanel />} />}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
@@ -111,6 +125,12 @@ function Home({ role }: { role: string }) {
           <h3 className="font-bold text-lg mb-2 text-blue-600">Lokalizacje</h3>
           <p className="text-sm text-gray-500">Struktura magazynu.</p>
         </Link>
+        {role === 'ADMIN' && (
+          <Link to="/admin" className="p-6 bg-white rounded-lg shadow-sm border border-purple-200 hover:border-purple-500 transition-colors text-center bg-purple-50">
+            <h3 className="font-bold text-lg mb-2 text-purple-600">Panel Admina</h3>
+            <p className="text-sm text-gray-500 font-medium">Zarządzaj użytkownikami.</p>
+          </Link>
+        )}
       </div>
     </div>
   );

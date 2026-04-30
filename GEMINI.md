@@ -1,13 +1,14 @@
 # LoadTrack Project Context
 
 System WMS do skanowania paczek i zarządzania paletami.
-
 ## Status Projektu
 - **Szkielet Monorepo:** Gotowy.
 - **Backend:** Express + Prisma (PostgreSQL). Port: **3601**.
 - **Frontend:** React + Vite + Tailwind. Port: **3602**.
-- **Baza Danych:** Dedykowany schemat `loadtrack` w PostgreSQL.
 - **Bezpieczeństwo:** System ról (ADMIN, LEADER, OPERATOR) + JWT Auth.
+- **Panel Admina:** Zarządzanie użytkownikami (CRUD) i rolami.
+- **Dashboard:** Statystyki magazynu w czasie rzeczywistym.
+- **Raporty:** Eksport stanu magazynu do plików Excel (.xlsx) z filtrami.
 
 ## Zrealizowane Funkcjonalności
 - **Skaner Paczek:** Przyjmowanie paczek z walidacją unikalności.
@@ -15,14 +16,18 @@ System WMS do skanowania paczek i zarządzania paletami.
 - **Ruchy Magazynowe:** Przypisywanie palet do lokalizacji (regałów).
 - **Załadunek:** Proces wydania towaru z magazynu na transport.
 - **Wyszukiwarka:** Globalne wyszukiwanie statusu paczek/palet.
-- **Auth:** Logowanie i autoryzacja operacji (np. usuwanie tylko dla Admin/Leader).
+- **Auth:** Logowanie i zarządzanie kontami (tylko ADMIN).
+- **Historia:** Widok archiwalny zamkniętych załadunków ze szczegółami.
+- **Eksport XLSX:** Natywny eksport raportów do formatu Excel.
 
 ## Kluczowe Zasady (Mandaty)
 1. **Unikalność:** `trackingNumber` i `palletNumber` muszą być unikalne.
 2. **Relacje:** Paczka -> Paleta -> Lokalizacja -> Załadunek.
 3. **Izolacja:** Wszystkie tabele aplikacji znajdują się w schemacie `loadtrack`.
 
-## Kolejne Kroki
-- Panel Admina (zarządzanie użytkownikami).
-- Dashboard z raportami i statystykami.
-- Historia załadunków (widok archiwalny).
+## Kolejne Kroki (TODO)
+- **Filtry w Historii:** Dodanie filtrów daty i kierowcy oraz eksportu XLSX do Historii Załadunków.
+- **Wydajność:** Optymalizacja zapytań raportowych przy dużym wolumenie danych.
+- **UI/UX:** Dodanie powiadomień (Toasts) przy błędach i sukcesach operacji.
+- **Drukowanie:** Integracja z drukarkami etykiet (ZPL/PDF).
+--- End of Context from: /opt/LoadTrack/GEMINI.md ---

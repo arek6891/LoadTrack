@@ -309,10 +309,31 @@ app.get('/api/loadings', async (req, res) => {
   }
 });
 
-app.get('/api/loadings/history', authenticate, async (req, res) => {
+app.get('/api/loadings/history', authenticate, async (req: any, res: any) => {
+  const { startDate, endDate, driverName } = req.query;
+
   try {
+    const where: any = { status: 'CLOSED' };
+
+    if (startDate || endDate) {
+      where.closedAt = {};
+      if (startDate) where.closedAt.gte = new Date(startDate as string);
+      if (endDate) {
+        const end = new Date(endDate as string);
+        end.setHours(23, 59, 59, 999);
+        where.closedAt.lte = end;
+      }
+    }
+
+    if (driverName) {
+      where.driverName = {
+        contains: driverName as string,
+        mode: 'insensitive'
+      };
+    }
+
     const history = await prisma.loading.findMany({
-      where: { status: 'CLOSED' },
+      where,
       include: { 
         _count: { select: { pallets: true } },
         pallets: {
@@ -323,6 +344,7 @@ app.get('/api/loadings/history', authenticate, async (req, res) => {
     });
     res.json(history);
   } catch (error) {
+    console.error('History fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -495,11 +517,22 @@ app.get('/api/reports/inventory', authenticate, async (req: any, res: any) => {
   try {
     const [packages, pallets] = await Promise.all([
       prisma.package.findMany({
-        include: { pallet: true, location: true }
+        select: {
+          trackingNumber: true,
+          status: true,
+          createdAt: true,
+          pallet: { select: { palletNumber: true } },
+          location: { select: { name: true } }
+        }
       }),
       prisma.pallet.findMany({
         where: { packages: { none: {} } },
-        include: { location: true }
+        select: {
+          palletNumber: true,
+          status: true,
+          createdAt: true,
+          location: { select: { name: true } }
+        }
       })
     ]);
 
@@ -524,6 +557,7 @@ app.get('/api/reports/inventory', authenticate, async (req: any, res: any) => {
 
     res.json(reportData);
   } catch (error) {
+    console.error('Inventory report error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

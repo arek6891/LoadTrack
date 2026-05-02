@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface Package {
   id: string;
@@ -11,8 +12,6 @@ interface Package {
 const Scanner: React.FC = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [scannedPackages, setScannedPackages] = useState<Package[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,8 +19,6 @@ const Scanner: React.FC = () => {
     if (!trackingNumber.trim()) return;
 
     setLoading(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       const response = await axios.post('/api/packages', {
@@ -29,10 +26,11 @@ const Scanner: React.FC = () => {
       });
 
       setScannedPackages([response.data, ...scannedPackages]);
-      setSuccess(`Zeskanowano pomyślnie: ${trackingNumber}`);
+      toast.success(`Zeskanowano pomyślnie: ${trackingNumber}`);
       setTrackingNumber('');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Wystąpił błąd podczas skanowania');
+      const errorMessage = err.response?.data?.error || 'Wystąpił błąd podczas skanowania';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -67,17 +65,6 @@ const Scanner: React.FC = () => {
             {loading ? 'Przetwarzanie...' : 'Zatwierdź Skan'}
           </button>
         </form>
-
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mt-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-md text-sm">
-            {success}
-          </div>
-        )}
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Toaster } from 'react-hot-toast';
 import Scanner from './Scanner';
 import Locations from './Locations';
 import PalletBuilder from './PalletBuilder';
@@ -48,6 +49,7 @@ function App() {
 
   return (
     <Router>
+      <Toaster position="top-right" reverseOrder={false} />
       <div className="min-h-screen bg-gray-100 w-full">
         <header className="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center text-center">
           <div className="flex items-center space-x-4">

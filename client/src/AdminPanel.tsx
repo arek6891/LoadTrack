@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface User {
   id: string;
@@ -11,7 +12,6 @@ interface User {
 export default function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   
   // Form state
   const [newUsername, setNewUsername] = useState('');
@@ -22,9 +22,9 @@ export default function AdminPanel() {
     try {
       const response = await axios.get('/api/users');
       setUsers(response.data);
-      setLoading(false);
     } catch (err: any) {
-      setError('Błąd podczas pobierania użytkowników');
+      toast.error('Błąd podczas pobierania użytkowników');
+    } finally {
       setLoading(false);
     }
   };
@@ -44,10 +44,10 @@ export default function AdminPanel() {
       setNewUsername('');
       setNewPassword('');
       setNewRole('OPERATOR');
+      toast.success('Użytkownik dodany pomyślnie');
       fetchUsers();
-      alert('Użytkownik dodany pomyślnie');
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Błąd podczas dodawania użytkownika');
+      toast.error(err.response?.data?.error || 'Błąd podczas dodawania użytkownika');
     }
   };
 
@@ -55,18 +55,20 @@ export default function AdminPanel() {
     if (!confirm('Czy na pewno chcesz usunąć tego użytkownika?')) return;
     try {
       await axios.delete(`/api/users/${id}`);
+      toast.success('Użytkownik usunięty');
       fetchUsers();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Błąd podczas usuwania użytkownika');
+      toast.error(err.response?.data?.error || 'Błąd podczas usuwania użytkownika');
     }
   };
 
   const handleChangeRole = async (id: string, role: string) => {
     try {
       await axios.patch(`/api/users/${id}`, { role });
+      toast.success('Rola zaktualizowana');
       fetchUsers();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Błąd podczas zmiany roli');
+      toast.error(err.response?.data?.error || 'Błąd podczas zmiany roli');
     }
   };
 
@@ -75,8 +77,6 @@ export default function AdminPanel() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <h1 className="text-3xl font-bold text-gray-800">Panel Administratora</h1>
-
-      {error && <div className="bg-red-100 text-red-700 p-4 rounded-lg">{error}</div>}
 
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Dodaj Nowego Użytkownika</h2>

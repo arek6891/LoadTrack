@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface LoginProps {
   onLogin: (user: any, token: string) => void;
@@ -8,13 +9,11 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     try {
       const response = await axios.post('/api/auth/login', {
@@ -22,8 +21,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         password
       });
       onLogin(response.data.user, response.data.token);
+      toast.success(`Witaj, ${response.data.user.username}!`);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Błąd logowania');
+      toast.error(err.response?.data?.error || 'Błąd logowania');
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               className="mt-1 block w-full border-2 border-gray-200 p-3 rounded-lg focus:border-blue-500 outline-none"
             />
           </div>
-          {error && <p className="text-red-600 text-sm font-bold">{error}</p>}
           <button 
             type="submit" 
             disabled={loading}

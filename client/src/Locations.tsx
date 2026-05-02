@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface Location {
   id: string;
@@ -14,7 +15,6 @@ const Locations: React.FC = () => {
   const [locations, setLocations] = useState<Location[]>([]);
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchLocations = async () => {
     try {
@@ -34,14 +34,14 @@ const Locations: React.FC = () => {
     if (!newName.trim()) return;
 
     setLoading(true);
-    setError(null);
 
     try {
       await axios.post('/api/locations', { name: newName.trim() });
+      toast.success(`Dodano lokalizację: ${newName}`);
       setNewName('');
       fetchLocations();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Błąd podczas dodawania lokalizacji');
+      toast.error(err.response?.data?.error || 'Błąd podczas dodawania lokalizacji');
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,6 @@ const Locations: React.FC = () => {
             Dodaj
           </button>
         </form>
-        {error && <p className="mt-2 text-red-600 text-sm">{error}</p>}
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
@@ -91,20 +90,18 @@ const Locations: React.FC = () => {
               </tr>
             ) : (
               locations.map((loc) => (
-                <li key={loc.id} className="contents">
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{loc.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.pallets}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.packages}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        loc._count.packages + loc._count.pallets > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                        {loc._count.packages + loc._count.pallets > 0 ? 'Zajęta' : 'Wolna'}
-                      </span>
-                    </td>
-                  </tr>
-                </li>
+                <tr key={loc.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{loc.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.pallets}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.packages}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      loc._count.packages + loc._count.pallets > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                    }`}>
+                      {loc._count.packages + loc._count.pallets > 0 ? 'Zajęta' : 'Wolna'}
+                    </span>
+                  </td>
+                </tr>
               ))
             )}
           </tbody>

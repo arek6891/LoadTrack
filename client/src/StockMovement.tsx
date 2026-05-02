@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const StockMovement: React.FC = () => {
   const [palletNumber, setPalletNumber] = useState('');
   const [locationName, setLocationName] = useState('');
   const [step, setStep] = useState<'PALLET' | 'LOCATION'>('PALLET');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const handlePalletSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (palletNumber.trim()) {
       setStep('LOCATION');
-      setError(null);
     }
   };
 
@@ -22,8 +20,6 @@ const StockMovement: React.FC = () => {
     if (!locationName.trim()) return;
 
     setLoading(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       await axios.post('/api/move/pallet', {
@@ -31,12 +27,12 @@ const StockMovement: React.FC = () => {
         locationName: locationName.trim(),
       });
 
-      setSuccess(`Paleta ${palletNumber} została przeniesiona do ${locationName}`);
+      toast.success(`Paleta ${palletNumber} -> ${locationName}`);
       setPalletNumber('');
       setLocationName('');
       setStep('PALLET');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Błąd podczas przenoszenia palety');
+      toast.error(err.response?.data?.error || 'Błąd podczas przenoszenia palety');
     } finally {
       setLoading(false);
     }
@@ -107,17 +103,6 @@ const StockMovement: React.FC = () => {
               </button>
             </div>
           </form>
-        )}
-
-        {error && (
-          <div className="mt-6 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm text-center font-medium">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mt-6 p-3 bg-green-50 text-green-700 border border-green-200 rounded-md text-sm text-center font-medium animate-pulse">
-            {success}
-          </div>
         )}
       </div>
     </div>

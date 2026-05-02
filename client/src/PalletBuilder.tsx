@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface Package {
   id: string;
@@ -17,32 +18,32 @@ const PalletBuilder: React.FC = () => {
   const [activePallet, setActivePallet] = useState<Pallet | null>(null);
   const [packageNumber, setPackageNumber] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handlePalletSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!palletNumber.trim()) return;
 
     setLoading(true);
-    setError(null);
     try {
       // Próbujemy pobrać paletę, jeśli nie istnieje - tworzymy ją
       try {
         const response = await axios.get(`/api/pallets/${palletNumber.trim()}`);
         setActivePallet(response.data);
+        toast.success(`Otwarto paletę: ${palletNumber}`);
       } catch (err: any) {
         if (err.response?.status === 404) {
           const createResponse = await axios.post('/api/pallets', {
             palletNumber: palletNumber.trim(),
           });
           setActivePallet({ ...createResponse.data, packages: [] });
+          toast.success(`Utworzono nową paletę: ${palletNumber}`);
         } else {
           throw err;
         }
       }
       setPalletNumber('');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Błąd podczas wybierania palety');
+      toast.error(err.response?.data?.error || 'Błąd podczas wybierania palety');
     } finally {
       setLoading(false);
     }
@@ -53,7 +54,6 @@ const PalletBuilder: React.FC = () => {
     if (!packageNumber.trim() || !activePallet) return;
 
     setLoading(true);
-    setError(null);
     try {
       const response = await axios.post('/api/pallets/add-package', {
         palletId: activePallet.id,
@@ -64,9 +64,10 @@ const PalletBuilder: React.FC = () => {
         ...activePallet,
         packages: [response.data, ...activePallet.packages],
       });
+      toast.success(`Dodano paczkę: ${packageNumber}`);
       setPackageNumber('');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Błąd podczas dodawania paczki');
+      toast.error(err.response?.data?.error || 'Błąd podczas dodawania paczki');
     } finally {
       setLoading(false);
     }
@@ -151,12 +152,6 @@ const PalletBuilder: React.FC = () => {
               )}
             </ul>
           </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm">
-          {error}
         </div>
       )}
     </div>

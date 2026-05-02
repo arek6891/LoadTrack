@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface Loading {
   id: string;
@@ -15,8 +16,6 @@ const LoadingManager: React.FC = () => {
   const [reg, setReg] = useState('');
   const [palletScan, setPalletScan] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const fetchLoadings = async () => {
     try {
@@ -33,7 +32,6 @@ const LoadingManager: React.FC = () => {
 
   const handleStartLoading = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     try {
       const response = await axios.post('/api/loadings', {
         driverName: driver,
@@ -41,24 +39,23 @@ const LoadingManager: React.FC = () => {
       });
       setActiveLoading(response.data);
       setIsCreating(false);
+      toast.success('Otwarto nowy transport');
       fetchLoadings();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Błąd przy otwieraniu załadunku');
+      toast.error(err.response?.data?.error || 'Błąd przy otwieraniu załadunku');
     }
   };
 
   const handleScanPallet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeLoading || !palletScan.trim()) return;
-    setError(null);
-    setSuccess(null);
 
     try {
       await axios.post('/api/loadings/add-pallet', {
         loadingId: activeLoading.id,
         palletNumber: palletScan.trim()
       });
-      setSuccess(`Paleta ${palletScan} załadowana!`);
+      toast.success(`Paleta ${palletScan} załadowana!`);
       setPalletScan('');
       // Aktualizujemy licznik lokalnie
       setActiveLoading({
@@ -66,7 +63,7 @@ const LoadingManager: React.FC = () => {
         _count: { pallets: (activeLoading._count?.pallets || 0) + 1 }
       });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Błąd skanowania palety');
+      toast.error(err.response?.data?.error || 'Błąd skanowania palety');
     }
   };
 
@@ -74,10 +71,11 @@ const LoadingManager: React.FC = () => {
     if (!activeLoading) return;
     try {
       await axios.post(`/api/loadings/${activeLoading.id}/close`);
+      toast.success('Transport zamknięty i wydany');
       setActiveLoading(null);
       fetchLoadings();
     } catch (err) {
-      setError('Błąd przy zamykaniu załadunku');
+      toast.error('Błąd przy zamykaniu załadunku');
     }
   };
 
@@ -192,8 +190,6 @@ const LoadingManager: React.FC = () => {
               />
               <button className="bg-green-600 text-white px-6 rounded-lg font-bold">ŁADUJ</button>
             </form>
-            {error && <p className="mt-2 text-red-600 font-medium">{error}</p>}
-            {success && <p className="mt-2 text-green-600 font-medium">{success}</p>}
           </div>
 
           <button 

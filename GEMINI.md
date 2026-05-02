@@ -17,8 +17,10 @@ System WMS do skanowania paczek i zarządzania paletami.
 - **Załadunek:** Proces wydania towaru z magazynu na transport.
 - **Wyszukiwarka:** Globalne wyszukiwanie statusu paczek/palet.
 - **Auth:** Logowanie i zarządzanie kontami (tylko ADMIN).
-- **Historia:** Widok archiwalny zamkniętych załadunków ze szczegółami.
-- **Eksport XLSX:** Natywny eksport raportów do formatu Excel.
+- **Historia:** Widok archiwalny zamkniętych załadunków z filtrami (data, kierowca) i eksportem XLSX.
+- **Eksport XLSX:** Natywny eksport raportów do formatu Excel (Stan Magazynu, Historia).
+- **UI/UX (Toasts):** System powiadomień w czasie rzeczywistym dla wszystkich kluczowych operacji.
+- **Wydajność:** Indeksacja bazy danych i optymalizacja zapytań Prisma (Selective Fetching).
 
 ## Kluczowe Zasady (Mandaty)
 1. **Unikalność:** `trackingNumber` i `palletNumber` muszą być unikalne.
@@ -26,8 +28,7 @@ System WMS do skanowania paczek i zarządzania paletami.
 3. **Izolacja:** Wszystkie tabele aplikacji znajdują się w schemacie `loadtrack`.
 
 ## Kolejne Kroki (TODO)
-- **Filtry w Historii:** Dodanie filtrów daty i kierowcy oraz eksportu XLSX do Historii Załadunków.
-- **Wydajność:** Optymalizacja zapytań raportowych przy dużym wolumenie danych.
-- **UI/UX:** Dodanie powiadomień (Toasts) przy błędach i sukcesach operacji.
-- **Drukowanie:** Integracja z drukarkami etykiet (ZPL/PDF).
+- **Konfigurowalne Szablony Etykiet:** Implementacja systemu zarządzania szablonami HTML/CSS dla etykiet paczek i palet.
+- **Drukowanie:** Integracja z drukarkami etykiet (podgląd i druk z przeglądarki).
+- **Walidacja Załadunku:** Dodatkowe reguły sprawdzające kompletność palety przed zamknięciem transportu.
 --- End of Context from: /opt/LoadTrack/GEMINI.md ---

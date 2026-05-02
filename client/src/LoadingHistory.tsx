@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 interface Pallet {
   id: string;
@@ -21,63 +22,140 @@ export default function LoadingHistory() {
   const [loading, setLoading] = useState(true);
   const [selectedLoading, setSelectedLoading] = useState<Loading | null>(null);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const response = await axios.get('/api/loadings/history');
-        setHistory(response.data);
-      } catch (error) {
-        console.error('Error fetching history:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHistory();
-  }, []);
+  // Filtry
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [driverName, setDriverName] = useState('');
 
-  if (loading) return <div className="text-center p-10">Ładowanie historii...</div>;
+  const fetchHistory = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (driverName) params.append('driverName', driverName);
+
+      const response = await axios.get(`/api/loadings/history?${params.toString()}`);
+      setHistory(response.data);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate, driverName]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  const handleExportExcel = () => {
+    const wsData = history.map(item => ({
+      'Data zamknięcia': item.closedAt ? new Date(item.closedAt).toLocaleString() : 'N/A',
+      'Kierowca': item.driverName,
+      'Numer rejestracyjny': item.vehicleRegistration,
+      'Liczba palet': item._count.pallets,
+      'ID Transportu': item.id
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Historia Załadunków");
+
+    const fileName = `LoadTrack_Historia_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">Historia Załadunków</h1>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-3xl font-bold text-gray-800">Historia Załadunków</h1>
+        <button 
+          onClick={handleExportExcel}
+          disabled={history.length === 0}
+          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-bold shadow-sm flex items-center gap-2 transition-colors"
+        >
+          <span>📊 Eksportuj do Excela</span>
+        </button>
+      </div>
+
+      {/* Filtry */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data od</label>
+          <input 
+            type="date"
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data do</label>
+          <input 
+            type="date"
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Kierowca / Pojazd</label>
+          <input 
+            type="text"
+            placeholder="Szukaj po nazwisku..."
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            value={driverName}
+            onChange={(e) => setDriverName(e.target.value)}
+          />
+        </div>
+      </div>
 
       <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-sm font-semibold text-gray-600">Data zamknięcia</th>
-              <th className="px-6 py-3 text-sm font-semibold text-gray-600">Kierowca</th>
-              <th className="px-6 py-3 text-sm font-semibold text-gray-600">Pojazd</th>
-              <th className="px-6 py-3 text-sm font-semibold text-gray-600">Palety</th>
-              <th className="px-6 py-3 text-sm font-semibold text-gray-600">Akcje</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {history.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-sm">
-                  {item.closedAt ? new Date(item.closedAt).toLocaleString() : 'N/A'}
-                </td>
-                <td className="px-6 py-4 font-medium">{item.driverName}</td>
-                <td className="px-6 py-4">{item.vehicleRegistration}</td>
-                <td className="px-6 py-4 text-sm font-bold text-blue-600">{item._count.pallets}</td>
-                <td className="px-6 py-4">
-                  <button 
-                    onClick={() => setSelectedLoading(item)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
-                  >
-                    Szczegóły
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {history.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-gray-500">Brak zamkniętych transportów w historii.</td>
+                <th className="px-6 py-3 text-sm font-semibold text-gray-600">Data zamknięcia</th>
+                <th className="px-6 py-3 text-sm font-semibold text-gray-600">Kierowca</th>
+                <th className="px-6 py-3 text-sm font-semibold text-gray-600">Pojazd</th>
+                <th className="px-6 py-3 text-sm font-semibold text-gray-600 text-center">Palety</th>
+                <th className="px-6 py-3 text-sm font-semibold text-gray-600">Akcje</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">Ładowanie danych...</td>
+                </tr>
+              ) : history.map((item) => (
+                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm">
+                    {item.closedAt ? new Date(item.closedAt).toLocaleString() : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 font-medium">{item.driverName}</td>
+                  <td className="px-6 py-4">{item.vehicleRegistration}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-blue-600 text-center">{item._count.pallets}</td>
+                  <td className="px-6 py-4">
+                    <button 
+                      onClick={() => setSelectedLoading(item)}
+                      className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1 rounded text-sm font-semibold transition-colors"
+                    >
+                      Szczegóły
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {!loading && history.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500 font-medium">Brak wyników dla wybranych kryteriów.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="bg-gray-50 p-4 border-t border-gray-200 text-sm text-gray-600">
+          Łącznie transportów: <strong>{history.length}</strong>
+        </div>
       </div>
 
       {/* Modal szczegółów */}

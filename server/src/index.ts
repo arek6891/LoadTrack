@@ -4,13 +4,38 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
+import * as XLSX from 'xlsx';
 
 dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
+const upload = multer({ storage: multer.memoryStorage() });
 const port = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-me';
+
+const createAuditLog = async (
+  entity: 'PACKAGE' | 'PALLET' | 'LOADING' | 'USER' | 'LOCATION' | 'TEMPLATE',
+  entityId: string,
+  action: string,
+  details?: string,
+  userId?: string
+) => {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        entity,
+        entityId,
+        action,
+        details,
+        userId
+      }
+    });
+  } catch (error) {
+    console.error('Audit log error:', error);
+  }
+};
 
 app.use(cors());
 app.use(express.json());
@@ -63,6 +88,9 @@ app.post('/api/auth/register', authenticate, authorize(['ADMIN']), async (req: a
     const user = await prisma.user.create({
       data: { username, password: hashedPassword, role: role || 'OPERATOR' }
     });
+
+    await createAuditLog('USER', user.id, 'CREATED', `Utworzono użytkownika: ${username} (${user.role})`, req.user.id);
+
     res.status(201).json({ id: user.id, username: user.username, role: user.role });
   } catch (error) {
     res.status(400).json({ error: 'Username already exists' });
@@ -83,6 +111,9 @@ app.patch('/api/users/:id', authenticate, authorize(['ADMIN']), async (req: any,
       data,
       select: { id: true, username: true, role: true }
     });
+
+    await createAuditLog('USER', id, 'UPDATED', `Zaktualizowano dane użytkownika: ${updatedUser.username}`, req.user.id);
+
     res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -95,6 +126,11 @@ app.delete('/api/users/:id', authenticate, authorize(['ADMIN']), async (req: any
     // Zapobiegamy usunięciu samego siebie
     if ((req.user as any).id === id) {
       return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    const userToDelete = await prisma.user.findUnique({ where: { id } });
+    if (userToDelete) {
+      await createAuditLog('USER', id, 'DELETED', `Usunięto użytkownika: ${userToDelete.username}`, req.user.id);
     }
 
     await prisma.user.delete({ where: { id } });
@@ -120,7 +156,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.post('/api/packages', async (req, res) => {
+app.post('/api/packages', authenticate, async (req: any, res: any) => {
   const { trackingNumber } = req.body;
 
   if (!trackingNumber) {
@@ -134,6 +170,9 @@ app.post('/api/packages', async (req, res) => {
         status: 'IN_STOCK',
       },
     });
+
+    await createAuditLog('PACKAGE', newPackage.id, 'CREATED', `Zeskanowano paczkę: ${trackingNumber}`, req.user.id);
+
     res.status(201).json(newPackage);
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -161,7 +200,7 @@ app.get('/api/locations', async (req, res) => {
   }
 });
 
-app.post('/api/locations', async (req, res) => {
+app.post('/api/locations', authenticate, authorize(['ADMIN', 'LEADER']), async (req: any, res: any) => {
   const { name } = req.body;
 
   if (!name) {
@@ -172,6 +211,9 @@ app.post('/api/locations', async (req, res) => {
     const newLocation = await prisma.location.create({
       data: { name },
     });
+
+    await createAuditLog('LOCATION', newLocation.id, 'CREATED', `Dodano lokalizację: ${name}`, req.user.id);
+
     res.status(201).json(newLocation);
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -182,9 +224,13 @@ app.post('/api/locations', async (req, res) => {
   }
 });
 
-app.delete('/api/packages/:id', authenticate, authorize(['ADMIN', 'LEADER']), async (req, res) => {
+app.delete('/api/packages/:id', authenticate, authorize(['ADMIN', 'LEADER']), async (req: any, res: any) => {
   const { id } = req.params;
   try {
+    const pkg = await prisma.package.findUnique({ where: { id } });
+    if (pkg) {
+      await createAuditLog('PACKAGE', id, 'DELETED', `Usunięto paczkę: ${pkg.trackingNumber}`, req.user.id);
+    }
     await prisma.package.delete({ where: { id } });
     res.json({ message: 'Package deleted successfully' });
   } catch (error) {
@@ -192,9 +238,13 @@ app.delete('/api/packages/:id', authenticate, authorize(['ADMIN', 'LEADER']), as
   }
 });
 
-app.delete('/api/pallets/:id', authenticate, authorize(['ADMIN', 'LEADER']), async (req, res) => {
+app.delete('/api/pallets/:id', authenticate, authorize(['ADMIN', 'LEADER']), async (req: any, res: any) => {
   const { id } = req.params;
   try {
+    const pallet = await prisma.pallet.findUnique({ where: { id } });
+    if (pallet) {
+      await createAuditLog('PALLET', id, 'DELETED', `Usunięto paletę: ${pallet.palletNumber}`, req.user.id);
+    }
     // Uwaga: Najpierw trzeba odpiąć paczki lub usunąć je kaskadowo w schemacie
     await prisma.package.updateMany({
       where: { palletId: id },
@@ -222,7 +272,7 @@ app.get('/api/pallets/:palletNumber', async (req, res) => {
   }
 });
 
-app.post('/api/pallets', async (req, res) => {
+app.post('/api/pallets', authenticate, async (req: any, res: any) => {
   const { palletNumber } = req.body;
   if (!palletNumber) return res.status(400).json({ error: 'Pallet number is required' });
 
@@ -230,6 +280,9 @@ app.post('/api/pallets', async (req, res) => {
     const newPallet = await prisma.pallet.create({
       data: { palletNumber },
     });
+
+    await createAuditLog('PALLET', newPallet.id, 'CREATED', `Utworzono paletę: ${palletNumber}`, req.user.id);
+
     res.status(201).json(newPallet);
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -240,21 +293,27 @@ app.post('/api/pallets', async (req, res) => {
   }
 });
 
-app.post('/api/pallets/add-package', async (req, res) => {
+app.post('/api/pallets/add-package', authenticate, async (req: any, res: any) => {
   const { palletId, trackingNumber } = req.body;
 
   try {
     const pkg = await prisma.package.findUnique({
-      where: { trackingNumber }
+      where: { trackingNumber },
+      include: { pallet: true }
     });
 
     if (!pkg) return res.status(404).json({ error: 'Package not found' });
     if (pkg.palletId) return res.status(400).json({ error: 'Package already on another pallet' });
 
+    const pallet = await prisma.pallet.findUnique({ where: { id: palletId } });
+    if (!pallet) return res.status(404).json({ error: 'Pallet not found' });
+
     const updatedPackage = await prisma.package.update({
       where: { id: pkg.id },
       data: { palletId }
     });
+
+    await createAuditLog('PACKAGE', pkg.id, 'ADDED_TO_PALLET', `Dodano paczkę ${trackingNumber} do palety ${pallet.palletNumber}`, req.user.id);
 
     res.json(updatedPackage);
   } catch (error) {
@@ -263,7 +322,7 @@ app.post('/api/pallets/add-package', async (req, res) => {
 });
 
 // Movements
-app.post('/api/move/pallet', async (req, res) => {
+app.post('/api/move/pallet', authenticate, async (req: any, res: any) => {
   const { palletNumber, locationName } = req.body;
 
   try {
@@ -290,6 +349,8 @@ app.post('/api/move/pallet', async (req, res) => {
       data: { locationId: location.id }
     });
 
+    await createAuditLog('PALLET', pallet.id, 'MOVED', `Przeniesiono paletę ${palletNumber} do lokalizacji ${locationName}`, req.user.id);
+
     res.json(updatedPallet);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -297,7 +358,7 @@ app.post('/api/move/pallet', async (req, res) => {
 });
 
 // Loadings (Shipments)
-app.get('/api/loadings', async (req, res) => {
+app.get('/api/loadings', authenticate, async (req: any, res: any) => {
   try {
     const loadings = await prisma.loading.findMany({
       where: { status: 'OPEN' },
@@ -349,7 +410,7 @@ app.get('/api/loadings/history', authenticate, async (req: any, res: any) => {
   }
 });
 
-app.post('/api/loadings', async (req, res) => {
+app.post('/api/loadings', authenticate, async (req: any, res: any) => {
   const { driverName, vehicleRegistration, expectedPallets } = req.body;
   if (!driverName || !vehicleRegistration) {
     return res.status(400).json({ error: 'Driver and vehicle info required' });
@@ -363,13 +424,16 @@ app.post('/api/loadings', async (req, res) => {
         expectedPallets: Array.isArray(expectedPallets) ? expectedPallets : []
       }
     });
+
+    await createAuditLog('LOADING', newLoading.id, 'CREATED', `Utworzono załadunek: ${driverName} (${vehicleRegistration})`, req.user.id);
+
     res.status(201).json(newLoading);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.patch('/api/loadings/:id', async (req, res) => {
+app.patch('/api/loadings/:id', authenticate, async (req: any, res: any) => {
   const { id } = req.params;
   const { expectedPallets, driverName, vehicleRegistration } = req.body;
 
@@ -383,13 +447,16 @@ app.patch('/api/loadings/:id', async (req, res) => {
       where: { id },
       data
     });
+
+    await createAuditLog('LOADING', id, 'UPDATED', `Zaktualizowano dane załadunku`, req.user.id);
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.post('/api/loadings/add-pallet', async (req, res) => {
+app.post('/api/loadings/add-pallet', authenticate, async (req: any, res: any) => {
   const { loadingId, palletNumber } = req.body;
 
   try {
@@ -420,13 +487,15 @@ app.post('/api/loadings/add-pallet', async (req, res) => {
       data: { status: 'LOADED', locationId: null }
     });
 
+    await createAuditLog('PALLET', pallet.id, 'LOADED', `Załadowano paletę ${palletNumber} na transport ${loading.driverName}`, req.user.id);
+
     res.json({ ...updatedPallet, isExpected });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.post('/api/loadings/:id/close', async (req, res) => {
+app.post('/api/loadings/:id/close', authenticate, async (req: any, res: any) => {
   const { id } = req.params;
   const { force } = req.body;
 
@@ -455,6 +524,9 @@ app.post('/api/loadings/:id/close', async (req, res) => {
       where: { id },
       data: { status: 'CLOSED', closedAt: new Date() }
     });
+
+    await createAuditLog('LOADING', id, 'CLOSED', `Zamknięto załadunek: ${loading.driverName}`, req.user.id);
+
     res.json({ message: 'Loading closed successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -645,7 +717,7 @@ app.get('/api/label-templates/default/:type', authenticate, async (req, res) => 
   }
 });
 
-app.post('/api/label-templates', authenticate, authorize(['ADMIN']), async (req, res) => {
+app.post('/api/label-templates', authenticate, authorize(['ADMIN']), async (req: any, res: any) => {
   const { name, type, htmlContent, cssContent, isDefault } = req.body;
 
   if (!name || !type || !htmlContent) {
@@ -669,6 +741,9 @@ app.post('/api/label-templates', authenticate, authorize(['ADMIN']), async (req,
         isDefault: !!isDefault 
       }
     });
+
+    await createAuditLog('TEMPLATE', template.id, 'CREATED', `Dodano szablon: ${name}`, req.user.id);
+
     res.status(201).json(template);
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -679,7 +754,7 @@ app.post('/api/label-templates', authenticate, authorize(['ADMIN']), async (req,
   }
 });
 
-app.patch('/api/label-templates/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
+app.patch('/api/label-templates/:id', authenticate, authorize(['ADMIN']), async (req: any, res: any) => {
   const { id } = req.params;
   const { name, type, htmlContent, cssContent, isDefault } = req.body;
 
@@ -704,17 +779,109 @@ app.patch('/api/label-templates/:id', authenticate, authorize(['ADMIN']), async 
         isDefault 
       }
     });
+
+    await createAuditLog('TEMPLATE', id, 'UPDATED', `Zaktualizowano szablon: ${template.name}`, req.user.id);
+
     res.json(template);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.delete('/api/label-templates/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
+app.delete('/api/label-templates/:id', authenticate, authorize(['ADMIN']), async (req: any, res: any) => {
   const { id } = req.params;
   try {
+    const template = await prisma.labelTemplate.findUnique({ where: { id } });
+    if (template) {
+      await createAuditLog('TEMPLATE', id, 'DELETED', `Usunięto szablon: ${template.name}`, req.user.id);
+    }
     await prisma.labelTemplate.delete({ where: { id } });
     res.json({ message: 'Template deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mass Import
+app.post('/api/import', authenticate, authorize(['ADMIN', 'LEADER']), upload.single('file'), async (req: any, res: any) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const { type } = req.body; // 'PACKAGE' or 'PALLET'
+
+  try {
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const data: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    let importedCount = 0;
+    let skippedCount = 0;
+
+    if (type === 'PACKAGE') {
+      for (const row of data) {
+        const trackingNumber = String(row.trackingNumber || row.number || row.tracking || '').trim();
+        if (!trackingNumber) {
+          skippedCount++;
+          continue;
+        }
+
+        try {
+          await prisma.package.create({
+            data: { trackingNumber, status: 'IN_STOCK' }
+          });
+          importedCount++;
+        } catch (err) {
+          skippedCount++;
+        }
+      }
+      await createAuditLog('PACKAGE', 'MASS_IMPORT', 'IMPORTED', `Import masowy paczek: +${importedCount}, pominięto: ${skippedCount}`, req.user.id);
+    } else if (type === 'PALLET') {
+      for (const row of data) {
+        const palletNumber = String(row.palletNumber || row.number || row.pallet || '').trim();
+        if (!palletNumber) {
+          skippedCount++;
+          continue;
+        }
+
+        try {
+          await prisma.pallet.create({
+            data: { palletNumber, status: 'IN_STOCK' }
+          });
+          importedCount++;
+        } catch (err) {
+          skippedCount++;
+        }
+      }
+      await createAuditLog('PALLET', 'MASS_IMPORT', 'IMPORTED', `Import masowy palet: +${importedCount}, pominięto: ${skippedCount}`, req.user.id);
+    } else {
+      return res.status(400).json({ error: 'Invalid import type' });
+    }
+
+    res.json({ importedCount, skippedCount });
+  } catch (error) {
+    console.error('Import error:', error);
+    res.status(500).json({ error: 'Failed to process file' });
+  }
+});
+
+// Audit Logs Endpoint
+app.get('/api/audit-logs', authenticate, authorize(['ADMIN', 'LEADER']), async (req: any, res: any) => {
+  const { entity, entityId, limit = 50 } = req.query;
+
+  try {
+    const where: any = {};
+    if (entity) where.entity = entity;
+    if (entityId) where.entityId = entityId;
+
+    const logs = await prisma.auditLog.findMany({
+      where,
+      include: {
+        user: {
+          select: { username: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Number(limit)
+    });
+    res.json(logs);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

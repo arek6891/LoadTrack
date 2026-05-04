@@ -104,47 +104,44 @@ const LoadingManager: React.FC = () => {
   ) || [];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4">
       {!activeLoading && !isCreating ? (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex justify-between items-center">
-            <h2 className="text-xl font-bold">Aktywne Załadunki</h2>
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 flex justify-between items-center">
+            <h2 className="text-xl font-bold flex items-center">
+              <span className="mr-2">🚛</span> Załadunki
+            </h2>
             <button 
               onClick={() => setIsCreating(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md font-bold hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-3 rounded-md font-bold text-sm shadow-sm active:bg-blue-700"
             >
-              + Nowy Transport
+              + NOWY
             </button>
           </div>
           
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {loadings.length === 0 ? (
-              <p className="text-center text-gray-500 py-10 bg-white rounded-lg border">Brak otwartych załadunków.</p>
+              <p className="text-center text-gray-500 py-12 bg-white rounded-lg border italic">Brak otwartych załadunków.</p>
             ) : (
               loadings.map(l => (
-                <div key={l.id} className="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-lg">{l.vehicleRegistration}</p>
-                    <p className="text-sm text-gray-600">Kierowca: {l.driverName}</p>
-                    {l.expectedPallets.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Plan: {l.expectedPallets.length} palet
-                      </p>
-                    )}
+                <div key={l.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center active:bg-gray-50 transition-colors">
+                  <div className="flex-grow">
+                    <p className="font-black text-xl text-gray-800 leading-none mb-1">{l.vehicleRegistration}</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-tighter">Kierowca: {l.driverName}</p>
                   </div>
-                  <div className="text-right flex items-center space-x-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                  <div className="flex items-center space-x-3">
+                    <div className={`px-2 py-1 rounded text-[10px] font-black border ${
                       l.expectedPallets.length > 0 && l._count.pallets === l.expectedPallets.length
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-green-100 border-green-200 text-green-800'
+                        : 'bg-blue-100 border-blue-200 text-blue-800'
                     }`}>
-                      {l._count.pallets} / {l.expectedPallets.length || '?'} palet
-                    </span>
+                      {l._count.pallets} / {l.expectedPallets.length || '?'}
+                    </div>
                     <button 
-                      onClick={() => setActiveLoading({...l, pallets: []})} // Tu by się przydało pobranie palet
-                      className="text-blue-600 font-bold hover:underline"
+                      onClick={() => setActiveLoading({...l, pallets: []})}
+                      className="bg-gray-800 text-white px-3 py-2 rounded text-xs font-black shadow-sm"
                     >
-                      Kontynuuj
+                      WEJDŹ
                     </button>
                   </div>
                 </div>
@@ -153,98 +150,102 @@ const LoadingManager: React.FC = () => {
           </div>
         </div>
       ) : isCreating ? (
-        <div className="bg-white p-6 rounded-lg shadow-md border max-w-md mx-auto">
-          <h2 className="text-xl font-bold mb-4">Nowy Transport</h2>
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200 max-w-md mx-auto">
+          <h2 className="text-xl font-bold mb-4 flex items-center">
+            <span className="mr-2">➕</span> Nowy Transport
+          </h2>
           <form onSubmit={handleStartLoading} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Numer Rejestracyjny</label>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Numer Rejestracyjny</label>
               <input 
                 type="text" 
                 required 
                 value={reg} 
                 onChange={e => setReg(e.target.value)}
-                className="w-full border p-2 rounded mt-1"
-                placeholder="np. WA 12345"
+                className="w-full border-2 border-gray-200 p-3 rounded-lg font-bold text-lg bg-gray-50 focus:border-blue-500"
+                placeholder="REG..."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Imię i Nazwisko Kierowcy</label>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Kierowca</label>
               <input 
                 type="text" 
                 required 
                 value={driver} 
                 onChange={e => setDriver(e.target.value)}
-                className="w-full border p-2 rounded mt-1"
+                className="w-full border-2 border-gray-200 p-3 rounded-lg font-bold bg-gray-50 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Planowane Palety (opcjonalnie, oddzielone spacją/przecinkiem)</label>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Planowane Palety</label>
               <textarea 
                 value={expectedRaw} 
                 onChange={e => setExpectedRaw(e.target.value)}
-                className="w-full border p-2 rounded mt-1 h-24 font-mono text-sm"
-                placeholder="PAL001, PAL002, ..."
+                className="w-full border-2 border-gray-200 p-3 rounded-lg h-24 font-mono text-sm bg-gray-50 focus:border-blue-500"
+                placeholder="PAL001, PAL002..."
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-2">
               <button 
                 type="button" 
                 onClick={() => setIsCreating(false)}
-                className="w-1/2 bg-gray-200 py-2 rounded font-bold"
+                className="w-1/3 bg-gray-100 text-gray-500 py-4 rounded-xl font-bold"
               >
                 Anuluj
               </button>
               <button 
                 type="submit" 
-                className="w-1/2 bg-blue-600 text-white py-2 rounded font-bold"
+                className="w-2/3 bg-blue-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-all"
               >
-                Otwórz
+                OTWÓRZ ✅
               </button>
             </div>
           </form>
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="bg-blue-600 p-6 rounded-lg shadow-md text-white">
+        <div className="space-y-4">
+          <div className="bg-blue-600 p-4 rounded-lg shadow-lg text-white">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-blue-100 text-sm uppercase font-bold">Załadunek w toku</p>
-                <h2 className="text-3xl font-black">{activeLoading?.vehicleRegistration}</h2>
-                <p className="mt-1">{activeLoading?.driverName}</p>
+                <p className="text-[10px] text-blue-100 uppercase font-black tracking-widest leading-none mb-1">Załadunek w toku</p>
+                <h2 className="text-3xl font-black leading-none mb-1">{activeLoading?.vehicleRegistration}</h2>
+                <p className="text-xs font-medium opacity-90">{activeLoading?.driverName}</p>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-black">
-                  {activeLoading?._count.pallets}
-                  {activeLoading?.expectedPallets && activeLoading.expectedPallets.length > 0 && <span className="text-xl opacity-60"> / {activeLoading.expectedPallets.length}</span>}
-                </p>
-                <p className="text-xs uppercase font-bold opacity-80">Palet na aucie</p>
+                <div className="bg-white/20 px-3 py-1 rounded-lg border border-white/30">
+                  <p className="text-3xl font-black leading-none">
+                    {activeLoading?._count.pallets}
+                    {activeLoading?.expectedPallets && activeLoading.expectedPallets.length > 0 && <span className="text-sm opacity-60">/{activeLoading.expectedPallets.length}</span>}
+                  </p>
+                  <p className="text-[10px] uppercase font-bold opacity-80 leading-none mt-1">Sztuk</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md border">
-            <h3 className="text-lg font-bold mb-4">Skanuj Paletę na Auto</h3>
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-bold mb-3 text-gray-800">Ładuj Paletę</h3>
             <form onSubmit={handleScanPallet} className="flex gap-2">
               <input 
                 type="text" 
                 value={palletScan}
                 onChange={e => setPalletScan(e.target.value)}
-                className="flex-grow border-2 border-blue-100 p-3 rounded-lg text-lg font-mono"
-                placeholder="Numer palety..."
+                className="flex-grow border-2 border-blue-500 p-4 rounded-xl text-xl font-mono font-bold bg-blue-50/30"
+                placeholder="PAL-..."
                 autoFocus
               />
-              <button className="bg-green-600 text-white px-6 rounded-lg font-bold">ŁADUJ</button>
+              <button className="bg-green-600 text-white px-6 rounded-xl font-black shadow-md active:bg-green-700">ŁADUJ</button>
             </form>
           </div>
 
           {activeLoading?.expectedPallets && activeLoading.expectedPallets.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow-md border">
-              <h3 className="text-lg font-bold mb-4">Status Kompletności</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+              <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3">Lista Kontrolna</h3>
+              <div className="grid grid-cols-3 gap-2">
                 {activeLoading?.expectedPallets.map(p => {
                   const isLoaded = activeLoading?.pallets?.some(lp => lp.palletNumber === p);
                   return (
-                    <div key={p} className={`p-2 rounded border text-center text-sm font-mono ${
+                    <div key={p} className={`py-2 px-1 rounded-lg border text-center text-[10px] font-black font-mono shadow-sm ${
                       isLoaded ? 'bg-green-100 border-green-200 text-green-800' : 'bg-red-50 border-red-100 text-red-700'
                     }`}>
                       {p}
@@ -255,16 +256,24 @@ const LoadingManager: React.FC = () => {
             </div>
           )}
 
-          <button 
-            onClick={() => handleCloseLoading()}
-            className={`w-full py-4 rounded-lg font-black text-lg transition-colors shadow-lg ${
-              missingPallets.length === 0 || activeLoading?.expectedPallets.length === 0
-                ? 'bg-gray-800 text-white hover:bg-black'
-                : 'bg-orange-500 text-white hover:bg-orange-600'
-            }`}
-          >
-            {missingPallets.length > 0 ? 'ZAMKNIJ MIMO BRAKÓW' : 'ZAMKNIJ ZAŁADUNEK I WYDAJ AUTO'}
-          </button>
+          <div className="flex flex-col gap-2 pt-2">
+            <button 
+              onClick={() => handleCloseLoading()}
+              className={`w-full py-5 rounded-xl font-black text-lg transition-all shadow-lg active:scale-95 ${
+                missingPallets.length === 0 || activeLoading?.expectedPallets.length === 0
+                  ? 'bg-gray-800 text-white'
+                  : 'bg-orange-500 text-white'
+              }`}
+            >
+              {missingPallets.length > 0 ? '❌ ZAMKNIJ Z BRAKAMI' : '✅ ZAMKNIJ I WYDAJ'}
+            </button>
+            <button 
+              onClick={() => setActiveLoading(null)}
+              className="w-full py-3 text-gray-500 font-bold text-sm"
+            >
+              Wróć do listy (bez zamykania)
+            </button>
+          </div>
         </div>
       )}
     </div>

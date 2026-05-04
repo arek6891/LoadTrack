@@ -75,87 +75,91 @@ const PalletBuilder: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-4">
       {!activePallet ? (
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Rozpocznij Paletę</h2>
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200">
+          <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+            <span className="mr-2">🏗️</span> Rozpocznij Paletę
+          </h2>
           <form onSubmit={handlePalletSubmit} className="space-y-4">
             <input
               type="text"
               value={palletNumber}
               onChange={(e) => setPalletNumber(e.target.value)}
-              placeholder="Zeskanuj numer palety (np. PAL-001)"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Zeskanuj nr palety..."
+              className="w-full px-4 py-3 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
               autoFocus
             />
             <button
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 disabled:bg-blue-300"
+              className="w-full bg-blue-600 text-white py-4 rounded-md font-bold text-lg hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
             >
-              {loading ? 'Szukanie...' : 'Otwórz / Stwórz Paletę'}
+              {loading ? 'Szukanie...' : 'OTWÓRZ / STWÓRZ PALETĘ'}
             </button>
           </form>
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="bg-blue-600 p-4 rounded-lg shadow-md text-white flex justify-between items-center">
-            <div>
-              <p className="text-xs opacity-80 uppercase tracking-wider font-bold">Aktywna Paleta</p>
-              <h2 className="text-2xl font-black">{activePallet.palletNumber}</h2>
-            </div>
-            <div className="flex space-x-2">
-              <button 
-                onClick={() => printLabel('PALLET', activePallet.palletNumber)}
-                className="bg-green-500 text-white px-3 py-1 rounded text-sm font-bold hover:bg-green-400"
-              >
-                DRUKUJ ETYKIETĘ
-              </button>
+        <div className="space-y-4">
+          <div className="bg-blue-600 p-4 rounded-lg shadow-lg text-white">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-[10px] opacity-80 uppercase tracking-widest font-black">Aktywna Paleta</p>
+                <h2 className="text-3xl font-black leading-none">{activePallet.palletNumber}</h2>
+              </div>
               <button 
                 onClick={() => setActivePallet(null)}
-                className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-bold hover:bg-blue-50"
+                className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded text-xs font-bold border border-white/30"
               >
-                Zakończ
+                ZAKOŃCZ
               </button>
             </div>
+            <button 
+              onClick={() => printLabel('PALLET', activePallet.palletNumber)}
+              className="w-full bg-white text-blue-600 py-3 rounded font-black text-sm shadow-md active:bg-blue-50"
+            >
+              🖨️ DRUKUJ ETYKIETĘ PALETY
+            </button>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">Dodaj Paczkę do Palety</h3>
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-bold mb-3 text-gray-800">Dodaj Paczkę</h3>
             <form onSubmit={handlePackageSubmit} className="space-y-4">
               <input
                 type="text"
                 value={packageNumber}
                 onChange={(e) => setPackageNumber(e.target.value)}
-                placeholder="Zeskanuj numer paczki"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Zeskanuj nr paczki..."
+                className="w-full px-4 py-3 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
                 autoFocus
               />
               <button
                 disabled={loading}
-                className="w-full bg-green-600 text-white py-2 rounded-md font-medium hover:bg-green-700 disabled:bg-green-300"
+                className="w-full bg-green-600 text-white py-4 rounded-md font-bold text-lg hover:bg-green-700 disabled:bg-green-300 transition-colors"
               >
-                {loading ? 'Dodawanie...' : 'Dodaj Paczkę'}
+                {loading ? 'Dodawanie...' : 'DODAJ PACZKĘ'}
               </button>
             </form>
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-            <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="font-bold text-gray-700">Zawartość Palety</h3>
-              <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">
-                {activePallet.packages.length} szt.
+            <div className="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="font-bold text-gray-700 text-sm">Zawartość Palety</h3>
+              <span className="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                {activePallet.packages.length} SZT.
               </span>
             </div>
             <ul className="divide-y divide-gray-200">
               {activePallet.packages.length === 0 ? (
-                <li className="p-8 text-center text-gray-400 italic">Paleta jest jeszcze pusta.</li>
+                <li className="p-8 text-center text-gray-400 italic text-sm">Paleta jest jeszcze pusta.</li>
               ) : (
                 activePallet.packages.map((pkg) => (
-                  <li key={pkg.id} className="p-4 flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-gray-500 text-xs font-bold">
-                      BOX
+                  <li key={pkg.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-[10px] font-bold border border-gray-200">
+                        BOX
+                      </div>
+                      <span className="font-mono text-sm font-bold text-gray-800">{pkg.trackingNumber}</span>
                     </div>
-                    <span className="font-mono text-sm">{pkg.trackingNumber}</span>
                   </li>
                 ))
               )}

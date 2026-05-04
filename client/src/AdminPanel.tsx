@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import TemplateManager from './TemplateManager';
+import AuditLogs from './AuditLogs';
+import MassImport from './MassImport';
 
 interface User {
   id: string;
@@ -13,7 +15,7 @@ interface User {
 export default function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'users' | 'templates'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'templates' | 'logs' | 'import'>('users');
   
   // Form state
   const [newUsername, setNewUsername] = useState('');
@@ -78,25 +80,37 @@ export default function AdminPanel() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <div className="flex justify-between items-end">
-        <h1 className="text-3xl font-bold text-gray-800">Panel Administratora</h1>
-        <div className="flex border-b">
+      <div className="flex justify-between items-end border-b border-gray-200">
+        <h1 className="text-3xl font-bold text-gray-800 pb-2">Panel Administratora</h1>
+        <div className="flex">
           <button 
             onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 font-bold ${activeTab === 'users' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
+            className={`px-4 py-2 font-bold transition-colors ${activeTab === 'users' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Użytkownicy
           </button>
           <button 
             onClick={() => setActiveTab('templates')}
-            className={`px-4 py-2 font-bold ${activeTab === 'templates' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
+            className={`px-4 py-2 font-bold transition-colors ${activeTab === 'templates' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Szablony Etykiet
+          </button>
+          <button 
+            onClick={() => setActiveTab('logs')}
+            className={`px-4 py-2 font-bold transition-colors ${activeTab === 'logs' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Logi Operacji
+          </button>
+          <button 
+            onClick={() => setActiveTab('import')}
+            className={`px-4 py-2 font-bold transition-colors ${activeTab === 'import' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Import Masowy
           </button>
         </div>
       </div>
 
-      {activeTab === 'users' ? (
+      {activeTab === 'users' && (
         <div className="space-y-8">
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-xl font-semibold mb-4">Dodaj Nowego Użytkownika</h2>
@@ -177,9 +191,10 @@ export default function AdminPanel() {
             </table>
           </div>
         </div>
-      ) : (
-        <TemplateManager />
       )}
+      {activeTab === 'templates' && <TemplateManager />}
+      {activeTab === 'logs' && <AuditLogs />}
+      {activeTab === 'import' && <MassImport />}
     </div>
   );
 }

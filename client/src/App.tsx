@@ -50,30 +50,30 @@ function App() {
   return (
     <Router>
       <Toaster position="top-right" reverseOrder={false} />
-      <div className="min-h-screen bg-gray-100 w-full">
-        <header className="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center text-center">
-          <div className="flex items-center space-x-4">
-            <Link to="/menu" className="text-xl font-bold">LoadTrack</Link>
-            <div className="hidden md:block text-xs bg-blue-700 px-2 py-1 rounded">
-              {user?.username} ({user?.role})
+      <div className="min-h-screen bg-gray-100 w-full flex flex-col">
+        <header className="bg-blue-600 text-white shadow-md flex flex-col md:flex-row justify-between items-center p-2 md:p-4 sticky top-0 z-50">
+          <div className="flex items-center justify-between w-full md:w-auto px-2">
+            <Link to="/menu" className="text-lg md:text-xl font-bold flex items-center">
+              <span className="mr-2">📦</span> LoadTrack
+            </Link>
+            <div className="md:hidden text-[10px] bg-blue-700 px-2 py-0.5 rounded opacity-80">
+              {user?.username}
             </div>
           </div>
-          <nav className="flex space-x-2 md:space-x-4 overflow-x-auto">
-            <Link to="/" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Dashboard</Link>
-            <Link to="/scanner" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Skaner</Link>
-            <Link to="/pallets" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Palety</Link>
-            <Link to="/move" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Ruchy</Link>
-            <Link to="/loading" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Załadunek</Link>
-            <Link to="/history" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Historia</Link>
-            <Link to="/report" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Raport Stanu</Link>
-            <Link to="/search" className="text-xs md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1 rounded">Szukaj</Link>
+          <nav className="flex items-center space-x-1 mt-2 md:mt-0 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0 px-1">
+            <Link to="/" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Pulpit</Link>
+            <Link to="/scanner" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded font-bold flex-shrink-0 border border-blue-400">SKANER</Link>
+            <Link to="/pallets" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Palety</Link>
+            <Link to="/move" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Ruchy</Link>
+            <Link to="/loading" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Załadunek</Link>
+            <Link to="/search" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Szukaj</Link>
             {user?.role === 'ADMIN' && (
-              <Link to="/admin" className="text-xs md:text-sm bg-purple-700 hover:bg-purple-800 px-2 md:px-3 py-1 rounded font-bold">Admin</Link>
+              <Link to="/admin" className="text-[10px] md:text-sm bg-purple-700 hover:bg-purple-800 px-2 md:px-3 py-1.5 rounded font-bold flex-shrink-0">Admin</Link>
             )}
-            <button onClick={handleLogout} className="text-xs md:text-sm bg-red-500 hover:bg-red-600 px-2 md:px-3 py-1 rounded">Wyloguj</button>
+            <button onClick={handleLogout} className="text-[10px] md:text-sm bg-red-500 hover:bg-red-600 px-2 md:px-3 py-1.5 rounded flex-shrink-0">X</button>
           </nav>
         </header>
-        <main className="p-4">
+        <main className="flex-grow p-2 md:p-4">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/menu" element={<Home role={user?.role} />} />

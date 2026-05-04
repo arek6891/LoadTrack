@@ -39,67 +39,73 @@ const StockMovement: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-        <h2 className="text-xl font-bold mb-6 text-gray-800 text-center">Ruch Magazynowy</h2>
+    <div className="max-w-md mx-auto space-y-4">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200">
+        <h2 className="text-xl font-bold mb-6 text-gray-800 text-center flex items-center justify-center">
+          <span className="mr-2">🔄</span> Ruch Magazynowy
+        </h2>
 
-        <div className="flex justify-between mb-8 relative">
-          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0"></div>
-          <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 ${step === 'PALLET' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-green-500 border-green-500 text-white'}`}>
+        <div className="flex justify-between mb-8 relative px-4">
+          <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-1/2 z-0"></div>
+          <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center font-black border-4 shadow-sm transition-colors ${step === 'PALLET' ? 'bg-blue-600 border-blue-200 text-white' : 'bg-green-600 border-green-200 text-white'}`}>
             1
           </div>
-          <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 ${step === 'LOCATION' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-200 text-gray-400'}`}>
+          <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center font-black border-4 shadow-sm transition-colors ${step === 'LOCATION' ? 'bg-blue-600 border-blue-200 text-white' : 'bg-white border-gray-100 text-gray-300'}`}>
             2
           </div>
         </div>
 
         {step === 'PALLET' ? (
-          <form onSubmit={handlePalletSubmit} className="space-y-4">
-            <label className="block text-sm font-medium text-gray-700 text-center uppercase tracking-wider">
-              KROK 1: Skanuj Paletę
-            </label>
-            <input
-              type="text"
-              value={palletNumber}
-              onChange={(e) => setPalletNumber(e.target.value)}
-              className="w-full px-4 py-3 text-lg border-2 border-blue-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
-              placeholder="PAL-XXXX"
-              autoFocus
-            />
-            <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">
-              DALEJ
+          <form onSubmit={handlePalletSubmit} className="space-y-6">
+            <div className="text-center">
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
+                KROK 1: SKANUJ PALETĘ
+              </label>
+              <input
+                type="text"
+                value={palletNumber}
+                onChange={(e) => setPalletNumber(e.target.value)}
+                className="w-full px-4 py-4 text-2xl border-2 border-blue-500 rounded-xl focus:ring-4 focus:ring-blue-100 text-center font-mono font-bold bg-blue-50/30"
+                placeholder="PAL-..."
+                autoFocus
+              />
+            </div>
+            <button className="w-full bg-blue-600 text-white py-5 rounded-xl font-black text-lg shadow-lg active:scale-[0.98] transition-all">
+              DALEJ ➡️
             </button>
           </form>
         ) : (
-          <form onSubmit={handleMoveSubmit} className="space-y-4">
-            <div className="text-center mb-4">
-              <span className="text-xs text-gray-500 uppercase">Wybrana Paleta:</span>
-              <p className="font-bold text-blue-600">{palletNumber}</p>
+          <form onSubmit={handleMoveSubmit} className="space-y-6">
+            <div className="text-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Wybrana Paleta</span>
+              <p className="font-black text-xl text-blue-600 font-mono">{palletNumber}</p>
             </div>
-            <label className="block text-sm font-medium text-gray-700 text-center uppercase tracking-wider">
-              KROK 2: Skanuj Lokalizację
-            </label>
-            <input
-              type="text"
-              value={locationName}
-              onChange={(e) => setLocationName(e.target.value)}
-              className="w-full px-4 py-3 text-lg border-2 border-blue-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
-              placeholder="A-01-01"
-              autoFocus
-            />
-            <div className="flex gap-2">
+            <div className="text-center">
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
+                KROK 2: SKANUJ LOKALIZACJĘ
+              </label>
+              <input
+                type="text"
+                value={locationName}
+                onChange={(e) => setLocationName(e.target.value)}
+                className="w-full px-4 py-4 text-2xl border-2 border-green-500 rounded-xl focus:ring-4 focus:ring-green-100 text-center font-mono font-bold bg-green-50/30"
+                placeholder="REG-..."
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3">
               <button 
                 type="button"
                 onClick={() => setStep('PALLET')}
-                className="w-1/3 bg-gray-100 text-gray-600 py-3 rounded-lg font-bold hover:bg-gray-200 transition-colors"
+                className="w-1/3 bg-gray-100 text-gray-500 py-5 rounded-xl font-bold hover:bg-gray-200 active:bg-gray-300 transition-colors"
               >
                 COFNIJ
               </button>
               <button 
                 disabled={loading}
-                className="w-2/3 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition-colors disabled:bg-green-300"
+                className="w-2/3 bg-green-600 text-white py-5 rounded-xl font-black text-lg shadow-lg active:scale-[0.98] transition-all disabled:bg-green-300"
               >
-                {loading ? 'PRZENOSZENIE...' : 'POTWIERDŹ'}
+                {loading ? 'PRZETWARZANIE...' : 'ZATWIERDŹ ✅'}
               </button>
             </div>
           </form>

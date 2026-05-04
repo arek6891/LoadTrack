@@ -24,6 +24,9 @@ System WMS do skanowania paczek i zarządzania paletami.
 - **Konfigurowalne Szablony Etykiet:** System CRUD dla szablonów HTML/CSS z obsługą placeholderów.
 - **Drukowanie:** Integracja z drukarkami (podgląd i druk) dla paczek i palet z poziomu UI.
 - **Walidacja Załadunku:** Weryfikacja kompletności transportu względem planowanej listy palet (expectedPallets).
+- **Logi Operacji:** Pełny system Audit Log rejestrujący historię zmian statusów, ruchów i akcji użytkowników (kto, co, kiedy).
+- **Optymalizacja Mobile:** Interfejs w pełni dostosowany do skanerów ręcznych (duże przyciski, czytelne fonty, ergonomiczny layout).
+- **Importy masowe:** Możliwość importu list paczek/palet z plików zewnętrznych (Excel/CSV) bezpośrednio do bazy danych.
 
 ## Kluczowe Zasady (Mandaty)
 1. **Unikalność:** `trackingNumber` i `palletNumber` muszą być unikalne.
@@ -31,7 +34,5 @@ System WMS do skanowania paczek i zarządzania paletami.
 3. **Izolacja:** Wszystkie tabele aplikacji znajdują się w schemacie `loadtrack`.
 
 ## Kolejne Kroki (TODO)
-- **Logi Operacji:** Rejestrowanie historii zmian statusów dla każdej paczki/palety (audit log).
-- **Optymalizacja Mobile:** Poprawa UI dla mniejszych ekranów skanerów ręcznych.
-- **Importy masowe:** Możliwość importu list paczek/palet z plików zewnętrznych do bazy.
+- Brak (Wszystkie kluczowe funkcjonalności zaimplementowane).
 --- End of Context from: /opt/LoadTrack/GEMINI.md ---

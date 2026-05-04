@@ -24,7 +24,31 @@ model User {
   username  String   @unique
   password  String
   role      Role     @default(OPERATOR)
+  logs      AuditLog[]
   createdAt DateTime @default(now())
+}
+
+enum EntityType {
+  PACKAGE
+  PALLET
+  LOADING
+  USER
+  LOCATION
+  TEMPLATE
+}
+
+model AuditLog {
+  id        String     @id @default(uuid())
+  entity    EntityType
+  entityId  String
+  action    String
+  details   String?
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
 }
 
 enum LoadingStatus {

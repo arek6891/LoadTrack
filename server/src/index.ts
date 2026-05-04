@@ -350,16 +350,40 @@ app.get('/api/loadings/history', authenticate, async (req: any, res: any) => {
 });
 
 app.post('/api/loadings', async (req, res) => {
-  const { driverName, vehicleRegistration } = req.body;
+  const { driverName, vehicleRegistration, expectedPallets } = req.body;
   if (!driverName || !vehicleRegistration) {
     return res.status(400).json({ error: 'Driver and vehicle info required' });
   }
 
   try {
     const newLoading = await prisma.loading.create({
-      data: { driverName, vehicleRegistration }
+      data: { 
+        driverName, 
+        vehicleRegistration,
+        expectedPallets: Array.isArray(expectedPallets) ? expectedPallets : []
+      }
     });
     res.status(201).json(newLoading);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.patch('/api/loadings/:id', async (req, res) => {
+  const { id } = req.params;
+  const { expectedPallets, driverName, vehicleRegistration } = req.body;
+
+  try {
+    const data: any = {};
+    if (expectedPallets !== undefined) data.expectedPallets = expectedPallets;
+    if (driverName) data.driverName = driverName;
+    if (vehicleRegistration) data.vehicleRegistration = vehicleRegistration;
+
+    const updated = await prisma.loading.update({
+      where: { id },
+      data
+    });
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -376,22 +400,27 @@ app.post('/api/loadings/add-pallet', async (req, res) => {
     if (!pallet) return res.status(404).json({ error: 'Pallet not found' });
     if (pallet.status === 'LOADED') return res.status(400).json({ error: 'Pallet already loaded' });
 
+    const loading = await prisma.loading.findUnique({ where: { id: loadingId } });
+    if (!loading) return res.status(404).json({ error: 'Loading not found' });
+
+    // Walidacja czy paleta jest na liście oczekiwanych (opcjonalne ostrzeżenie, ale pozwalamy)
+    const isExpected = loading.expectedPallets.length === 0 || loading.expectedPallets.includes(palletNumber);
+
     const updatedPallet = await prisma.pallet.update({
       where: { id: pallet.id },
       data: { 
         loadingId,
         status: 'LOADED',
-        locationId: null // Usuwamy z lokalizacji magazynowej
+        locationId: null 
       }
     });
 
-    // Aktualizujemy status wszystkich paczek na palecie
     await prisma.package.updateMany({
       where: { palletId: pallet.id },
       data: { status: 'LOADED', locationId: null }
     });
 
-    res.json(updatedPallet);
+    res.json({ ...updatedPallet, isExpected });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -399,7 +428,29 @@ app.post('/api/loadings/add-pallet', async (req, res) => {
 
 app.post('/api/loadings/:id/close', async (req, res) => {
   const { id } = req.params;
+  const { force } = req.body;
+
   try {
+    const loading = await prisma.loading.findUnique({
+      where: { id },
+      include: { pallets: true }
+    });
+
+    if (!loading) return res.status(404).json({ error: 'Loading not found' });
+
+    if (loading.expectedPallets.length > 0 && !force) {
+      const loadedPalletNumbers = loading.pallets.map(p => p.palletNumber);
+      const missingPallets = loading.expectedPallets.filter(p => !loadedPalletNumbers.includes(p));
+      
+      if (missingPallets.length > 0) {
+        return res.status(400).json({ 
+          error: 'INCOMPLETE_LOADING', 
+          missingPallets,
+          message: `Brakuje ${missingPallets.length} palet z planowanej listy.`
+        });
+      }
+    }
+
     await prisma.loading.update({
       where: { id },
       data: { status: 'CLOSED', closedAt: new Date() }
@@ -558,6 +609,113 @@ app.get('/api/reports/inventory', authenticate, async (req: any, res: any) => {
     res.json(reportData);
   } catch (error) {
     console.error('Inventory report error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Label Templates
+app.get('/api/label-templates', authenticate, async (req, res) => {
+  try {
+    const templates = await prisma.labelTemplate.findMany({
+      orderBy: { updatedAt: 'desc' }
+    });
+    res.json(templates);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/label-templates/default/:type', authenticate, async (req, res) => {
+  const { type } = req.params;
+  try {
+    const template = await prisma.labelTemplate.findFirst({
+      where: { type: type as any, isDefault: true }
+    });
+    if (!template) {
+      // Jeśli brak domyślnego, weź najnowszy tego typu
+      const fallback = await prisma.labelTemplate.findFirst({
+        where: { type: type as any },
+        orderBy: { updatedAt: 'desc' }
+      });
+      return res.json(fallback);
+    }
+    res.json(template);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/label-templates', authenticate, authorize(['ADMIN']), async (req, res) => {
+  const { name, type, htmlContent, cssContent, isDefault } = req.body;
+
+  if (!name || !type || !htmlContent) {
+    return res.status(400).json({ error: 'Name, type and htmlContent are required' });
+  }
+
+  try {
+    if (isDefault) {
+      await prisma.labelTemplate.updateMany({
+        where: { type, isDefault: true },
+        data: { isDefault: false }
+      });
+    }
+
+    const template = await prisma.labelTemplate.create({
+      data: { 
+        name, 
+        type, 
+        htmlContent, 
+        cssContent: cssContent || '', 
+        isDefault: !!isDefault 
+      }
+    });
+    res.status(201).json(template);
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Template with this name already exists' });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
+app.patch('/api/label-templates/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
+  const { id } = req.params;
+  const { name, type, htmlContent, cssContent, isDefault } = req.body;
+
+  try {
+    if (isDefault) {
+      const current = await prisma.labelTemplate.findUnique({ where: { id } });
+      const targetType = type || current?.type;
+      
+      await prisma.labelTemplate.updateMany({
+        where: { type: targetType, isDefault: true },
+        data: { isDefault: false }
+      });
+    }
+
+    const template = await prisma.labelTemplate.update({
+      where: { id },
+      data: { 
+        name, 
+        type, 
+        htmlContent, 
+        cssContent, 
+        isDefault 
+      }
+    });
+    res.json(template);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/label-templates/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.labelTemplate.delete({ where: { id } });
+    res.json({ message: 'Template deleted successfully' });
+  } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });

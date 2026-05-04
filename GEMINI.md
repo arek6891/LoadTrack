@@ -21,6 +21,9 @@ System WMS do skanowania paczek i zarządzania paletami.
 - **Eksport XLSX:** Natywny eksport raportów do formatu Excel (Stan Magazynu, Historia).
 - **UI/UX (Toasts):** System powiadomień w czasie rzeczywistym dla wszystkich kluczowych operacji.
 - **Wydajność:** Indeksacja bazy danych i optymalizacja zapytań Prisma (Selective Fetching).
+- **Konfigurowalne Szablony Etykiet:** System CRUD dla szablonów HTML/CSS z obsługą placeholderów.
+- **Drukowanie:** Integracja z drukarkami (podgląd i druk) dla paczek i palet z poziomu UI.
+- **Walidacja Załadunku:** Weryfikacja kompletności transportu względem planowanej listy palet (expectedPallets).
 
 ## Kluczowe Zasady (Mandaty)
 1. **Unikalność:** `trackingNumber` i `palletNumber` muszą być unikalne.
@@ -28,7 +31,7 @@ System WMS do skanowania paczek i zarządzania paletami.
 3. **Izolacja:** Wszystkie tabele aplikacji znajdują się w schemacie `loadtrack`.
 
 ## Kolejne Kroki (TODO)
-- **Konfigurowalne Szablony Etykiet:** Implementacja systemu zarządzania szablonami HTML/CSS dla etykiet paczek i palet.
-- **Drukowanie:** Integracja z drukarkami etykiet (podgląd i druk z przeglądarki).
-- **Walidacja Załadunku:** Dodatkowe reguły sprawdzające kompletność palety przed zamknięciem transportu.
+- **Logi Operacji:** Rejestrowanie historii zmian statusów dla każdej paczki/palety (audit log).
+- **Optymalizacja Mobile:** Poprawa UI dla mniejszych ekranów skanerów ręcznych.
+- **Importy masowe:** Możliwość importu list paczek/palet z plików zewnętrznych do bazy.
 --- End of Context from: /opt/LoadTrack/GEMINI.md ---

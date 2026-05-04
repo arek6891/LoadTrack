@@ -16,7 +16,8 @@ System WMS do ewidencji paczek i palet, zarządzania lokalizacjami oraz monitoro
 *   **Package:** trackingNumber (UNIQUE), status, relacja do Pallet/Location.
 *   **Pallet:** palletNumber (UNIQUE), status, relacja do Location/Loading.
 *   **Location:** Nazwy regałów/miejsc (UNIQUE).
-*   **Loading:** Dane transportu (kierowca, rejestracja, status OPEN/CLOSED).
+*   **Loading:** Dane transportu (kierowca, rejestracja, status OPEN/CLOSED, lista oczekiwanych palet `expectedPallets`).
+*   **LabelTemplate:** Szablony HTML/CSS do wydruku etykiet paczek i palet.
 
 ## 4. Konfiguracja Portów
 *   **Backend API:** `http://localhost:3601`
@@ -27,7 +28,8 @@ System WMS do ewidencji paczek i palet, zarządzania lokalizacjami oraz monitoro
 *   `/api/packages`: Skanowanie nowych paczek.
 *   `/api/pallets`: Tworzenie i agregacja palet.
 *   `/api/move/pallet`: Przypisywanie palet do lokalizacji.
-*   `/api/loadings`: Obsługa transportów.
+*   `/api/loadings`: Obsługa transportów i walidacja kompletności.
+*   `/api/label-templates`: Zarządzanie szablonami etykiet (CRUD).
 *   `/api/search`: Globalna wyszukiwarka towaru.
 
 ## 6. Bezpieczeństwo

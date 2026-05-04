@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { printLabel } from './printUtils';
 
 interface Package {
   id: string;
@@ -102,12 +103,20 @@ const PalletBuilder: React.FC = () => {
               <p className="text-xs opacity-80 uppercase tracking-wider font-bold">Aktywna Paleta</p>
               <h2 className="text-2xl font-black">{activePallet.palletNumber}</h2>
             </div>
-            <button 
-              onClick={() => setActivePallet(null)}
-              className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-bold hover:bg-blue-50"
-            >
-              Zakończ
-            </button>
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => printLabel('PALLET', activePallet.palletNumber)}
+                className="bg-green-500 text-white px-3 py-1 rounded text-sm font-bold hover:bg-green-400"
+              >
+                DRUKUJ ETYKIETĘ
+              </button>
+              <button 
+                onClick={() => setActivePallet(null)}
+                className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-bold hover:bg-blue-50"
+              >
+                Zakończ
+              </button>
+            </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">

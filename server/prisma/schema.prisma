@@ -78,9 +78,26 @@ model Loading {
   vehicleRegistration String
   status              LoadingStatus @default(OPEN)
   pallets             Pallet[]
+  expectedPallets     String[]      @default([])
   createdAt           DateTime      @default(now())
   closedAt            DateTime?
 
   @@index([status, closedAt])
   @@index([driverName])
+}
+
+enum TemplateType {
+  PACKAGE
+  PALLET
+}
+
+model LabelTemplate {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  type        TemplateType @default(PACKAGE)
+  htmlContent String       @db.Text
+  cssContent  String       @db.Text
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }

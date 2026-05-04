@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { printLabel } from './printUtils';
 
 interface Package {
   id: string;
@@ -76,9 +77,17 @@ const Scanner: React.FC = () => {
             scannedPackages.map((pkg) => (
               <li key={pkg.id} className="py-3 flex justify-between items-center">
                 <span className="font-mono text-sm">{pkg.trackingNumber}</span>
-                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                  {pkg.status}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                    {pkg.status}
+                  </span>
+                  <button 
+                    onClick={() => printLabel('PACKAGE', pkg.trackingNumber)}
+                    className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded font-bold"
+                  >
+                    DRUKUJ
+                  </button>
+                </div>
               </li>
             ))
           )}

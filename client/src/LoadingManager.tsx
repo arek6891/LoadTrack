@@ -6,6 +6,8 @@ interface Loading {
   id: string;
   driverName: string;
   vehicleRegistration: string;
+  expectedPallets: string[];
+  pallets?: { palletNumber: string }[];
   _count: { pallets: number };
 }
 
@@ -14,6 +16,7 @@ const LoadingManager: React.FC = () => {
   const [activeLoading, setActiveLoading] = useState<Loading | null>(null);
   const [driver, setDriver] = useState('');
   const [reg, setReg] = useState('');
+  const [expectedRaw, setExpectedRaw] = useState('');
   const [palletScan, setPalletScan] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -32,12 +35,15 @@ const LoadingManager: React.FC = () => {
 
   const handleStartLoading = async (e: React.FormEvent) => {
     e.preventDefault();
+    const expectedPallets = expectedRaw.split(/[\s,]+/).filter(p => p.trim() !== '');
+    
     try {
       const response = await axios.post('/api/loadings', {
         driverName: driver,
-        vehicleRegistration: reg
+        vehicleRegistration: reg,
+        expectedPallets
       });
-      setActiveLoading(response.data);
+      setActiveLoading({ ...response.data, pallets: [] });
       setIsCreating(false);
       toast.success('Otwarto nowy transport');
       fetchLoadings();
@@ -51,33 +57,51 @@ const LoadingManager: React.FC = () => {
     if (!activeLoading || !palletScan.trim()) return;
 
     try {
-      await axios.post('/api/loadings/add-pallet', {
+      const response = await axios.post('/api/loadings/add-pallet', {
         loadingId: activeLoading.id,
         palletNumber: palletScan.trim()
       });
-      toast.success(`Paleta ${palletScan} załadowana!`);
+      
+      if (response.data.isExpected === false) {
+        toast.error(`UWAGA: Paleta ${palletScan} nie znajduje się na liście planowanej!`, { duration: 5000 });
+      } else {
+        toast.success(`Paleta ${palletScan} załadowana!`);
+      }
+
       setPalletScan('');
-      // Aktualizujemy licznik lokalnie
+      
       setActiveLoading({
         ...activeLoading,
-        _count: { pallets: (activeLoading._count?.pallets || 0) + 1 }
+        _count: { pallets: (activeLoading._count?.pallets || 0) + 1 },
+        pallets: [...(activeLoading.pallets || []), { palletNumber: palletScan.trim() }]
       });
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Błąd skanowania palety');
     }
   };
 
-  const handleCloseLoading = async () => {
+  const handleCloseLoading = async (force = false) => {
     if (!activeLoading) return;
     try {
-      await axios.post(`/api/loadings/${activeLoading.id}/close`);
+      await axios.post(`/api/loadings/${activeLoading.id}/close`, { force });
       toast.success('Transport zamknięty i wydany');
       setActiveLoading(null);
       fetchLoadings();
-    } catch (err) {
-      toast.error('Błąd przy zamykaniu załadunku');
+    } catch (err: any) {
+      if (err.response?.data?.error === 'INCOMPLETE_LOADING') {
+        const missing = err.response.data.missingPallets.join(', ');
+        if (confirm(`BRAKI! Brakuje palet: ${missing}. Czy mimo to zamknąć transport?`)) {
+          handleCloseLoading(true);
+        }
+      } else {
+        toast.error('Błąd przy zamykaniu załadunku');
+      }
     }
   };
+
+  const missingPallets = activeLoading?.expectedPallets.filter(
+    exp => !activeLoading.pallets?.some(p => p.palletNumber === exp)
+  ) || [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -102,13 +126,22 @@ const LoadingManager: React.FC = () => {
                   <div>
                     <p className="font-bold text-lg">{l.vehicleRegistration}</p>
                     <p className="text-sm text-gray-600">Kierowca: {l.driverName}</p>
+                    {l.expectedPallets.length > 0 && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Plan: {l.expectedPallets.length} palet
+                      </p>
+                    )}
                   </div>
                   <div className="text-right flex items-center space-x-4">
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-bold">
-                      {l._count.pallets} palet
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                      l.expectedPallets.length > 0 && l._count.pallets === l.expectedPallets.length
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {l._count.pallets} / {l.expectedPallets.length || '?'} palet
                     </span>
                     <button 
-                      onClick={() => setActiveLoading(l)}
+                      onClick={() => setActiveLoading({...l, pallets: []})} // Tu by się przydało pobranie palet
                       className="text-blue-600 font-bold hover:underline"
                     >
                       Kontynuuj
@@ -144,6 +177,15 @@ const LoadingManager: React.FC = () => {
                 className="w-full border p-2 rounded mt-1"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Planowane Palety (opcjonalnie, oddzielone spacją/przecinkiem)</label>
+              <textarea 
+                value={expectedRaw} 
+                onChange={e => setExpectedRaw(e.target.value)}
+                className="w-full border p-2 rounded mt-1 h-24 font-mono text-sm"
+                placeholder="PAL001, PAL002, ..."
+              />
+            </div>
             <div className="flex gap-2">
               <button 
                 type="button" 
@@ -167,11 +209,14 @@ const LoadingManager: React.FC = () => {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-blue-100 text-sm uppercase font-bold">Załadunek w toku</p>
-                <h2 className="text-3xl font-black">{activeLoading.vehicleRegistration}</h2>
-                <p className="mt-1">{activeLoading.driverName}</p>
+                <h2 className="text-3xl font-black">{activeLoading?.vehicleRegistration}</h2>
+                <p className="mt-1">{activeLoading?.driverName}</p>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-black">{activeLoading._count.pallets}</p>
+                <p className="text-4xl font-black">
+                  {activeLoading?._count.pallets}
+                  {activeLoading?.expectedPallets && activeLoading.expectedPallets.length > 0 && <span className="text-xl opacity-60"> / {activeLoading.expectedPallets.length}</span>}
+                </p>
                 <p className="text-xs uppercase font-bold opacity-80">Palet na aucie</p>
               </div>
             </div>
@@ -192,11 +237,33 @@ const LoadingManager: React.FC = () => {
             </form>
           </div>
 
+          {activeLoading?.expectedPallets && activeLoading.expectedPallets.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow-md border">
+              <h3 className="text-lg font-bold mb-4">Status Kompletności</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {activeLoading?.expectedPallets.map(p => {
+                  const isLoaded = activeLoading?.pallets?.some(lp => lp.palletNumber === p);
+                  return (
+                    <div key={p} className={`p-2 rounded border text-center text-sm font-mono ${
+                      isLoaded ? 'bg-green-100 border-green-200 text-green-800' : 'bg-red-50 border-red-100 text-red-700'
+                    }`}>
+                      {p}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <button 
-            onClick={handleCloseLoading}
-            className="w-full bg-gray-800 text-white py-4 rounded-lg font-black text-lg hover:bg-black transition-colors shadow-lg"
+            onClick={() => handleCloseLoading()}
+            className={`w-full py-4 rounded-lg font-black text-lg transition-colors shadow-lg ${
+              missingPallets.length === 0 || activeLoading?.expectedPallets.length === 0
+                ? 'bg-gray-800 text-white hover:bg-black'
+                : 'bg-orange-500 text-white hover:bg-orange-600'
+            }`}
           >
-            ZAMKNIJ ZAŁADUNEK I WYDAJ AUTO
+            {missingPallets.length > 0 ? 'ZAMKNIJ MIMO BRAKÓW' : 'ZAMKNIJ ZAŁADUNEK I WYDAJ AUTO'}
           </button>
         </div>
       )}

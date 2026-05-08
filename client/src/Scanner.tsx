@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { printLabel } from './printUtils';
+import { useFocusLock } from './hooks/useFocusLock';
 
 interface Package {
   id: string;
@@ -13,94 +15,129 @@ interface Package {
 const Scanner: React.FC = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [scannedPackages, setScannedPackages] = useState<Package[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [flash, setFlash] = useState<'success' | 'error' | null>(null);
+  const queryClient = useQueryClient();
+  const inputRef = useFocusLock();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trackingNumber.trim()) return;
-
-    setLoading(true);
-
-    try {
-      const response = await axios.post('/api/packages', {
-        trackingNumber: trackingNumber.trim(),
-      });
-
-      setScannedPackages([response.data, ...scannedPackages]);
-      toast.success(`Zeskanowano pomyślnie: ${trackingNumber}`);
-      setTrackingNumber('');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Wystąpił błąd podczas skanowania';
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (flash) {
+      const timer = setTimeout(() => setFlash(null), 500);
+      return () => clearTimeout(timer);
     }
+  }, [flash]);
+
+  const scanMutation = useMutation({
+    mutationFn: async (number: string) => {
+      const response = await axios.post('/api/packages', {
+        trackingNumber: number,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setScannedPackages([data, ...scannedPackages]);
+      setFlash('success');
+      toast.success(`Zeskanowano: ${data.trackingNumber}`, { duration: 1000 });
+      setTrackingNumber('');
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      
+      // Sygnał dźwiękowy (opcjonalny, jeśli przeglądarka pozwoli)
+      playAudio(true);
+    },
+    onError: (err: any) => {
+      setFlash('error');
+      const errorMessage = err.response?.data?.error || 'Błąd skanowania';
+      toast.error(errorMessage);
+      setTrackingNumber(''); // Czyścimy błędny kod, by skaner mógł czytać dalej
+      playAudio(false);
+    }
+  });
+
+  const playAudio = (success: boolean) => {
+    try {
+      const audio = new Audio(success ? '/success.mp3' : '/error.mp3');
+      audio.volume = 0.3;
+      audio.play().catch(() => {}); // Ignoruj błędy autoplay
+    } catch (e) {}
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trackingNumber.trim() || scanMutation.isPending) return;
+    scanMutation.mutate(trackingNumber.trim());
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
-      <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
-          <span className="mr-2">🔍</span> Skanuj Paczkę
+    <div className={`max-w-md mx-auto space-y-4 transition-colors duration-300 ${
+      flash === 'success' ? 'bg-green-100' : flash === 'error' ? 'bg-red-100' : ''
+    } p-2 rounded-xl min-h-[80vh]`}>
+      
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border-2 border-gray-200">
+        <h2 className="text-2xl font-black mb-6 text-gray-800 flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="mr-2">🔍</span> SKANER
+          </div>
+          {scanMutation.isPending && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded animate-pulse">SYNC...</span>}
         </h2>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="tracking" className="block text-sm font-medium text-gray-700 mb-1">
-              Numer Trackingowy
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="relative">
             <input
+              ref={inputRef}
               id="tracking"
               type="text"
               inputMode="text"
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
-              disabled={loading}
-              className="block w-full px-4 py-3 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-              placeholder="Zeskanuj numer..."
-              autoFocus
+              disabled={scanMutation.isPending}
+              className={`block w-full px-4 py-6 text-3xl border-4 rounded-xl shadow-inner text-center font-mono font-bold transition-all ${
+                flash === 'success' ? 'border-green-500 bg-green-50' : 
+                flash === 'error' ? 'border-red-500 bg-red-50' : 
+                'border-blue-500 bg-gray-50 focus:border-blue-600 focus:ring-8 focus:ring-blue-100'
+              }`}
+              placeholder="CZEKAM NA SKAN..."
+              autoComplete="off"
             />
           </div>
+          
           <button
             type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-4 px-4 border border-transparent rounded-md shadow-sm text-lg font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 transition-colors"
+            disabled={scanMutation.isPending || !trackingNumber.trim()}
+            className="w-full py-6 px-4 rounded-xl shadow-lg text-2xl font-black text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all disabled:bg-gray-300 uppercase"
           >
-            {loading ? 'Przetwarzanie...' : 'ZATWIERDŹ SKAN'}
+            ZATWIERDŹ (ENTER)
           </button>
         </form>
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-        <h3 className="text-lg font-semibold mb-3 text-gray-800 flex justify-between items-center">
-          <span>Ostatnio Zeskanowane</span>
-          <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">{scannedPackages.length}</span>
+        <h3 className="text-sm font-black mb-3 text-gray-400 uppercase tracking-widest flex justify-between items-center">
+          <span>Ostatnie skany</span>
+          <span className="bg-gray-100 px-2 py-1 rounded">{scannedPackages.length}</span>
         </h3>
-        <ul className="divide-y divide-gray-100">
-          {scannedPackages.length === 0 ? (
-            <p className="text-sm text-gray-500 italic text-center py-8">Brak zeskanowanych paczek w tej sesji.</p>
-          ) : (
-            scannedPackages.map((pkg) => (
-              <li key={pkg.id} className="py-3 flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className="font-mono text-base font-bold text-gray-900">{pkg.trackingNumber}</span>
-                  <span className="text-[10px] text-gray-400">{new Date(pkg.createdAt).toLocaleTimeString()}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-bold uppercase">
-                    {pkg.status}
-                  </span>
-                  <button 
-                    onClick={() => printLabel('PACKAGE', pkg.trackingNumber)}
-                    className="text-[10px] bg-gray-800 text-white hover:bg-black px-3 py-2 rounded font-black shadow-sm"
-                  >
-                    DRUKUJ
-                  </button>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
+        <div className="max-h-[40vh] overflow-y-auto">
+          <ul className="divide-y divide-gray-100">
+            {scannedPackages.length === 0 ? (
+              <p className="text-sm text-gray-400 italic text-center py-12">Brak paczek w tej sesji.</p>
+            ) : (
+              scannedPackages.map((pkg) => (
+                <li key={pkg.id} className="py-4 flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className="font-mono text-xl font-bold text-gray-900">{pkg.trackingNumber}</span>
+                    <span className="text-[10px] text-gray-400">{new Date(pkg.createdAt).toLocaleTimeString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => printLabel('PACKAGE', pkg.trackingNumber)}
+                      className="bg-black text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm active:bg-gray-800"
+                    >
+                      DRUK
+                    </button>
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
       </div>
     </div>
   );

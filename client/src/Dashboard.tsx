@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
 interface Stats {
@@ -9,25 +9,17 @@ interface Stats {
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading, isError } = useQuery<Stats>({
+    queryKey: ['stats'],
+    queryFn: async () => {
+      const response = await axios.get('/api/stats');
+      return response.data;
+    },
+    refetchInterval: 30000, // Automatyczne odświeżanie co 30 sekund
+  });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await axios.get('/api/stats');
-        setStats(response.data);
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
-
-  if (loading) return <div className="text-center p-10">Ładowanie statystyk...</div>;
-  if (!stats) return <div className="text-center p-10 text-red-600">Błąd ładowania danych.</div>;
+  if (isLoading) return <div className="text-center p-10">Ładowanie statystyk...</div>;
+  if (isError || !stats) return <div className="text-center p-10 text-red-600">Błąd ładowania danych.</div>;
 
   const getCount = (arr: { status: string; _count: number }[], status: string) => {
     return arr.find(i => i.status === status)?._count || 0;

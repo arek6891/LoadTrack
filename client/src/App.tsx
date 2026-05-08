@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-ro
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Toaster } from 'react-hot-toast';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Scanner from './Scanner';
 import Locations from './Locations';
 import PalletBuilder from './PalletBuilder';
@@ -14,6 +15,15 @@ import Dashboard from './Dashboard';
 import LoadingHistory from './LoadingHistory';
 import InventoryReport from './InventoryReport';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
 function App() {
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -21,7 +31,6 @@ function App() {
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Prosty sposób na odzyskanie danych użytkownika z tokena (lub można dodać endpoint /me)
       const savedUser = localStorage.getItem('user');
       if (savedUser) setUser(JSON.parse(savedUser));
     }
@@ -48,93 +57,75 @@ function App() {
   }
 
   return (
-    <Router>
-      <Toaster position="top-right" reverseOrder={false} />
-      <div className="min-h-screen bg-gray-100 w-full flex flex-col">
-        <header className="bg-blue-600 text-white shadow-md flex flex-col md:flex-row justify-between items-center p-2 md:p-4 sticky top-0 z-50">
-          <div className="flex items-center justify-between w-full md:w-auto px-2">
-            <Link to="/menu" className="text-lg md:text-xl font-bold flex items-center">
-              <span className="mr-2">📦</span> LoadTrack
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Toaster position="top-right" reverseOrder={false} />
+        <div className="min-h-screen bg-gray-100 w-full flex flex-col pb-20 md:pb-0">
+          <header className="bg-slate-900 text-white shadow-lg hidden md:flex justify-between items-center p-4 sticky top-0 z-50">
+            <Link to="/" className="text-xl font-black tracking-tighter flex items-center">
+              <span className="bg-blue-600 p-1 rounded mr-2">LT</span> LOADTRACK
             </Link>
-            <div className="md:hidden text-[10px] bg-blue-700 px-2 py-0.5 rounded opacity-80">
-              {user?.username}
-            </div>
-          </div>
-          <nav className="flex items-center space-x-1 mt-2 md:mt-0 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0 px-1">
-            <Link to="/" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Pulpit</Link>
-            <Link to="/scanner" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded font-bold flex-shrink-0 border border-blue-400">SKANER</Link>
-            <Link to="/pallets" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Palety</Link>
-            <Link to="/move" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Ruchy</Link>
-            <Link to="/loading" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Załadunek</Link>
-            <Link to="/search" className="text-[10px] md:text-sm bg-blue-700 hover:bg-blue-800 px-2 md:px-3 py-1.5 rounded flex-shrink-0">Szukaj</Link>
-            {user?.role === 'ADMIN' && (
-              <Link to="/admin" className="text-[10px] md:text-sm bg-purple-700 hover:bg-purple-800 px-2 md:px-3 py-1.5 rounded font-bold flex-shrink-0">Admin</Link>
-            )}
-            <button onClick={handleLogout} className="text-[10px] md:text-sm bg-red-500 hover:bg-red-600 px-2 md:px-3 py-1.5 rounded flex-shrink-0">X</button>
+            <nav className="flex items-center space-x-2">
+              <NavLink to="/" label="Pulpit" />
+              <NavLink to="/scanner" label="SKANER" primary />
+              <NavLink to="/pallets" label="Palety" />
+              <NavLink to="/move" label="Ruchy" />
+              <NavLink to="/loading" label="Załadunek" />
+              <NavLink to="/search" label="Szukaj" />
+              {user?.role === 'ADMIN' && <NavLink to="/admin" label="Admin" highlight />}
+              <button onClick={handleLogout} className="ml-4 p-2 text-gray-400 hover:text-red-500">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              </button>
+            </nav>
+          </header>
+
+          {/* Mobile Bottom Nav */}
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center p-2 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+            <MobileTab to="/scanner" label="Skanuj" icon="🔍" />
+            <MobileTab to="/pallets" label="Palety" icon="📦" />
+            <MobileTab to="/" label="Home" icon="🏠" />
+            <MobileTab to="/move" label="Ruchy" icon="🔄" />
+            <MobileTab to="/loading" label="Wydaj" icon="🚚" />
           </nav>
-        </header>
-        <main className="flex-grow p-2 md:p-4">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/menu" element={<Home role={user?.role} />} />
-            <Route path="/scanner" element={<Scanner />} />
-            <Route path="/pallets" element={<PalletBuilder />} />
-            <Route path="/move" element={<StockMovement />} />
-            <Route path="/loading" element={<LoadingManager />} />
-            <Route path="/history" element={<LoadingHistory />} />
-            <Route path="/report" element={<InventoryReport />} />
-            <Route path="/search" element={<Search userRole={user?.role} />} />
-            <Route path="/locations" element={<Locations />} />
-            {user?.role === 'ADMIN' && <Route path="/admin" element={<AdminPanel />} />}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+
+          <main className="flex-grow p-2 md:p-8">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/scanner" element={<Scanner />} />
+              <Route path="/pallets" element={<PalletBuilder />} />
+              <Route path="/move" element={<StockMovement />} />
+              <Route path="/loading" element={<LoadingManager />} />
+              <Route path="/history" element={<LoadingHistory />} />
+              <Route path="/report" element={<InventoryReport />} />
+              <Route path="/search" element={<Search userRole={user?.role} />} />
+              <Route path="/locations" element={<Locations />} />
+              {user?.role === 'ADMIN' && <Route path="/admin" element={<AdminPanel />} />}
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </QueryClientProvider>
   );
 }
 
-function Home({ role }: { role: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center space-y-4">
-      <h2 className="text-2xl font-semibold text-gray-800">Witaj w LoadTrack</h2>
+function NavLink({ to, label, primary, highlight }: { to: string; label: string; primary?: boolean; highlight?: boolean }) {
+  const base = "px-4 py-2 rounded-lg text-sm font-bold transition-all ";
+  const styles = primary 
+    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md scale-105" 
+    : highlight 
+    ? "bg-purple-600 text-white hover:bg-purple-700" 
+    : "text-gray-300 hover:bg-slate-800 hover:text-white";
+  
+  return <Link to={to} className={base + styles}>{label}</Link>;
+}
 
-      <p className="text-gray-600 text-center max-w-md">
-        System do skanowania paczek i zarządzania paletami.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
-        <Link to="/scanner" className="p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 transition-colors text-center">
-          <h3 className="font-bold text-lg mb-2 text-blue-600">Skaner Paczek</h3>
-          <p className="text-sm text-gray-500">Przyjmij nowe paczki.</p>
-        </Link>
-        <Link to="/pallets" className="p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 transition-colors text-center">
-          <h3 className="font-bold text-lg mb-2 text-blue-600">Budowanie Palet</h3>
-          <p className="text-sm text-gray-500">Agreguj paczki.</p>
-        </Link>
-        <Link to="/move" className="p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 transition-colors text-center">
-          <h3 className="font-bold text-lg mb-2 text-blue-600">Ruchy Magazynowe</h3>
-          <p className="text-sm text-gray-500">Zmień lokalizację palety.</p>
-        </Link>
-        <Link to="/loading" className="p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 transition-colors text-center">
-          <h3 className="font-bold text-lg mb-2 text-blue-600">Załadunek (Wydanie)</h3>
-          <p className="text-sm text-gray-500">Wydaj palety z magazynu.</p>
-        </Link>
-        <Link to="/search" className="p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 transition-colors text-center border-blue-200 bg-blue-50">
-          <h3 className="font-bold text-lg mb-2 text-blue-600">Szukaj</h3>
-          <p className="text-sm text-gray-500 font-medium">Znajdź paczkę lub paletę.</p>
-        </Link>
-        <Link to="/locations" className="p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 transition-colors text-center">
-          <h3 className="font-bold text-lg mb-2 text-blue-600">Lokalizacje</h3>
-          <p className="text-sm text-gray-500">Struktura magazynu.</p>
-        </Link>
-        {role === 'ADMIN' && (
-          <Link to="/admin" className="p-6 bg-white rounded-lg shadow-sm border border-purple-200 hover:border-purple-500 transition-colors text-center bg-purple-50">
-            <h3 className="font-bold text-lg mb-2 text-purple-600">Panel Admina</h3>
-            <p className="text-sm text-gray-500 font-medium">Zarządzaj użytkownikami.</p>
-          </Link>
-        )}
-      </div>
-    </div>
+function MobileTab({ to, label, icon }: { to: string; label: string; icon: string }) {
+  return (
+    <Link to={to} className="flex flex-col items-center justify-center w-full py-1 text-gray-600 active:text-blue-600">
+      <span className="text-xl">{icon}</span>
+      <span className="text-[10px] font-bold uppercase tracking-tighter mt-1">{label}</span>
+    </Link>
   );
 }
 

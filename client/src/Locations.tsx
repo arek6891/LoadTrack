@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Location {
   id: string;
@@ -12,39 +13,35 @@ interface Location {
 }
 
 const Locations: React.FC = () => {
-  const [locations, setLocations] = useState<Location[]>([]);
   const [newName, setNewName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchLocations = async () => {
-    try {
+  const { data: locations = [], isLoading } = useQuery<Location[]>({
+    queryKey: ['locations'],
+    queryFn: async () => {
       const response = await axios.get('/api/locations');
-      setLocations(response.data);
-    } catch (err) {
-      console.error('Failed to fetch locations');
+      return response.data;
     }
-  };
+  });
 
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim()) return;
-
-    setLoading(true);
-
-    try {
-      await axios.post('/api/locations', { name: newName.trim() });
+  const createMutation = useMutation({
+    mutationFn: async (name: string) => {
+      return axios.post('/api/locations', { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locations'] });
       toast.success(`Dodano lokalizację: ${newName}`);
       setNewName('');
-      fetchLocations();
-    } catch (err: any) {
+    },
+    onError: (err: any) => {
       toast.error(err.response?.data?.error || 'Błąd podczas dodawania lokalizacji');
-    } finally {
-      setLoading(false);
     }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    createMutation.mutate(newName.trim());
   };
 
   return (
@@ -60,52 +57,56 @@ const Locations: React.FC = () => {
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Np. A-01-01, Rampa-1..."
               className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
+              disabled={createMutation.isPending}
             />
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={createMutation.isPending}
             className="bg-blue-600 text-white px-6 py-2 rounded-md font-medium hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
           >
-            Dodaj
+            {createMutation.isPending ? 'Dodawanie...' : 'Dodaj'}
           </button>
         </form>
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nazwa</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Palety</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paczki</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {locations.length === 0 ? (
+        {isLoading ? (
+          <div className="p-10 text-center text-gray-500">Ładowanie lokalizacji...</div>
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan={4} className="px-6 py-4 text-center text-gray-500 italic">Brak zdefiniowanych lokalizacji.</td>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nazwa</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Palety</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paczki</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
-            ) : (
-              locations.map((loc) => (
-                <tr key={loc.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{loc.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.pallets}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.packages}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      loc._count.packages + loc._count.pallets > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {loc._count.packages + loc._count.pallets > 0 ? 'Zajęta' : 'Wolna'}
-                    </span>
-                  </td>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {locations.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500 italic">Brak zdefiniowanych lokalizacji.</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                locations.map((loc) => (
+                  <tr key={loc.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{loc.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.pallets}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{loc._count.packages}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        loc._count.packages + loc._count.pallets > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {loc._count.packages + loc._count.pallets > 0 ? 'Zajęta' : 'Wolna'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import auditLogRoutes from './auditLog.routes';
 import reportRoutes from './report.routes';
 import templateRoutes from './template.routes';
 import importRoutes from './import.routes';
+import diagnosticsRoutes from './diagnostics.routes';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/audit-logs', auditLogRoutes);
 router.use('/reports', reportRoutes);
 router.use('/label-templates', templateRoutes);
 router.use('/import', importRoutes);
+router.use('/diagnostics', diagnosticsRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

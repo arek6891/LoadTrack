@@ -16,6 +16,10 @@ app.use('/api', routes);
 // Error Handling
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`Server is running on port ${config.port} in ${config.nodeEnv} mode`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(config.port, () => {
+    console.log(`Server is running on port ${config.port} in ${config.nodeEnv} mode`);
+  });
+}
+
+export { app };

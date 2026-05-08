@@ -14,6 +14,7 @@ import AdminPanel from './AdminPanel';
 import Dashboard from './Dashboard';
 import LoadingHistory from './LoadingHistory';
 import InventoryReport from './InventoryReport';
+import Diagnostics from './Diagnostics';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +73,7 @@ function App() {
               <NavLink to="/move" label="Ruchy" />
               <NavLink to="/loading" label="Załadunek" />
               <NavLink to="/search" label="Szukaj" />
+              {user?.role === 'ADMIN' && <NavLink to="/diagnostics" label="Testy" highlight />}
               {user?.role === 'ADMIN' && <NavLink to="/admin" label="Admin" highlight />}
               <button onClick={handleLogout} className="ml-4 p-2 text-gray-400 hover:text-red-500">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
@@ -100,6 +102,7 @@ function App() {
               <Route path="/search" element={<Search userRole={user?.role} />} />
               <Route path="/locations" element={<Locations />} />
               {user?.role === 'ADMIN' && <Route path="/admin" element={<AdminPanel />} />}
+              {user?.role === 'ADMIN' && <Route path="/diagnostics" element={<Diagnostics />} />}
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>

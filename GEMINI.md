@@ -33,6 +33,11 @@ System WMS do skanowania paczek i zarządzania paletami.
 2. **Relacje:** Paczka -> Paleta -> Lokalizacja -> Załadunek.
 3. **Izolacja:** Wszystkie tabele aplikacji znajdują się w schemacie `loadtrack`.
 
-## Kolejne Kroki (TODO)
-- Brak (Wszystkie kluczowe funkcjonalności zaimplementowane).
+## Kolejne Kroki (Roadmap)
+Szczegółowa lista zadań dla specjalistów znajduje się w pliku [TODO.md](./TODO.md).
+
+1. **Faza 1 (W TOKU):** Audyt UX i ergonomii przemysłowej.
+2. **Faza 2:** Przygotowanie infrastruktury DevOps (Backupy, PM2).
+3. **Faza 3:** Optymalizacja bazy danych i wydajności.
+4. **Faza 4:** Audyt bezpieczeństwa i pentesty.
 --- End of Context from: /opt/LoadTrack/GEMINI.md ---

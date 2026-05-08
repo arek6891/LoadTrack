@@ -53,11 +53,21 @@ const Scanner: React.FC = () => {
   });
 
   const playAudio = (success: boolean) => {
+    // 1. Dźwięk
     try {
       const audio = new Audio(success ? '/success.mp3' : '/error.mp3');
       audio.volume = 0.3;
-      audio.play().catch(() => {}); // Ignoruj błędy autoplay
+      audio.play().catch(() => {});
     } catch (e) {}
+
+    // 2. Wibracje (Haptic Feedback) - standard dla WMS
+    if ('vibrate' in navigator) {
+      if (success) {
+        navigator.vibrate(50); // Krótki impuls przy sukcesie
+      } else {
+        navigator.vibrate([100, 50, 100]); // Podwójny impuls przy błędzie
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

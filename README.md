@@ -1,52 +1,41 @@
-# LoadTrack - System WMS
+# LoadTrack - System WMS (Warehouse Management System)
 
-Nowoczesny system zarządzania magazynem (Warehouse Management System) zoptymalizowany pod kątem skanerów ręcznych.
+LoadTrack to nowoczesny, lekki system zarządzania magazynem, zaprojektowany z myślą o szybkości pracy na terminalach mobilnych oraz pełnej analityce dla managerów.
 
-## Kluczowe Funkcjonalności
-- **Skaner Paczek:** Przyjmowanie i walidacja paczek.
-- **Budowanie Palet:** Agregacja paczek na jednostki paletowe.
-- **Ruchy Magazynowe:** Zarządzanie lokalizacjami i regałami.
-- **Zarządzanie Załadunkiem:** Kontrola wydań towaru i walidacja z listą oczekiwaną.
-- **Importy Masowe:** Szybkie zasilanie bazy z plików Excel/CSV.
-- **Audit Log:** Pełna historia operacji (kto, co, kiedy).
-- **Szablony Etykiet:** Elastyczny system drukowania oparty na HTML/CSS.
-- **Mobile First:** Interfejs zaprojektowany pod skanery magazynowe.
+## 🚀 Kluczowe Funkcje
 
-## Technologie
-- **Frontend:** React, Vite, Tailwind CSS, Axios.
-- **Backend:** Node.js, Express, Prisma ORM.
-- **Baza Danych:** PostgreSQL.
-- **Logika:** JWT Auth, Multer, XLSX processing.
+### 📱 Tryb Operatora (Skaner)
+- **Skanowanie bezdotykowe:** Automatyczne zarządzanie focusem (nie trzeba klikać w ekran).
+- **Haptic Feedback:** Wibracje przy poprawnym/błędnym skanie.
+- **Budowanie Palet:** Agregacja paczek na jednostki paletowe w czasie rzeczywistym.
+- **Załadunek (Wydanie):** Weryfikacja towaru z planowaną listą transportową.
 
-## Uruchomienie Systemu
-Aplikacja działa w modelu monorepo.
+### 🖥️ Tryb Managera (Monitor)
+- **Pulpit Operacyjny:** Statystyki magazynu i postęp załadunków LIVE.
+- **Pełna Historia:** Archiwum zamkniętych transportów z eksportem do XLSX.
+- **Logi Audytowe:** Każda akcja (kto, co, kiedy) jest rejestrowana i niezmienialna.
+- **Zarządzanie Etykietami:** Edytor HTML/CSS dla etykiet logistycznych.
 
-### Backend
-```bash
-cd server
-npm install
-npx prisma migrate dev
-npm run dev
-```
-Domyślny port: **3601**
+## 🛠️ Architektura i Bezpieczeństwo
+- **Tech Stack:** React (Vite), Node.js (Express), Prisma (PostgreSQL).
+- **Stabilność:** Procesy nadzorowane przez PM2 z auto-restartem.
+- **Backupy:** Automatyczna kopia bazy danych co 24h z rotacją 7-dniową.
+- **Bezpieczeństwo:** Autoryzacja JWT (24h), system ról (ADMIN, LEADER, OPERATOR).
 
-### Frontend
-```bash
-cd client
-npm install
-npm run dev -- --port 3602
-```
-Domyślny port: **3602**
+## 📦 Instalacja i Uruchomienie
 
-## Dane Logowania (Admin)
-- **Login:** `admin`
-- **Hasło:** `logwin`
+### Wymagania
+- Node.js v20+
+- PostgreSQL v16+
 
-## Struktura Plików
-- `/client`: Aplikacja React (Vite).
-- `/server`: API Express + Prisma.
-- `ARCHITECTURE.md`: Opis architektury systemu.
-- `GEMINI.md`: Status i historia rozwoju projektu.
+### Szybki Start
+1. Zainstaluj zależności: `npm install` (w folderach client i server).
+2. Skonfiguruj `.env` w folderze server.
+3. Wykonaj migracje: `npx prisma migrate deploy`.
+4. Uruchom produkcyjnie: `./scripts/deploy.sh`.
+
+## 👨‍🔧 Administracja i Diagnostyka
+System posiada wbudowany **Panel Diagnostyczny** (dostępny dla ADMIN), który umożliwia zdalne uruchamianie testów automatycznych API/E2E i podgląd logów w czasie rzeczywistym przez SSE.
 
 ---
-System stworzony w ramach projektu LoadTrack.
+*LoadTrack - Efektywność mierzona skanem.*

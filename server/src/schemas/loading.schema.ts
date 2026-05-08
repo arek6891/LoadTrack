@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const createLoadingSchema = z.object({
-  driverName: z.string().min(1),
-  vehicleRegistration: z.string().min(1),
+  driverName: z.string().optional(),
+  vehicleRegistration: z.string().optional(),
   expectedPallets: z.array(z.string()).optional(),
 });
 

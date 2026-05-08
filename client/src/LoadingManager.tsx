@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useFocusLock } from './hooks/useFocusLock';
 
 interface Loading {
   id: string;
@@ -19,6 +20,7 @@ const LoadingManager: React.FC = () => {
   const [expectedRaw, setExpectedRaw] = useState('');
   const [palletScan, setPalletScan] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const inputRef = useFocusLock();
 
   const fetchLoadings = async () => {
     try {
@@ -225,16 +227,20 @@ const LoadingManager: React.FC = () => {
 
           <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
             <h3 className="text-lg font-bold mb-3 text-gray-800">Ładuj Paletę</h3>
-            <form onSubmit={handleScanPallet} className="flex gap-2">
+            <form onSubmit={handleScanPallet} className="space-y-4">
               <input 
+                ref={inputRef}
                 type="text" 
                 value={palletScan}
                 onChange={e => setPalletScan(e.target.value)}
-                className="flex-grow border-2 border-blue-500 p-4 rounded-xl text-xl font-mono font-bold bg-blue-50/30"
-                placeholder="PAL-..."
+                className="w-full border-4 border-blue-500 p-6 rounded-xl text-3xl font-mono font-bold bg-gray-50 focus:border-blue-600 focus:ring-8 focus:ring-blue-100 text-center"
+                placeholder="SKANUJ PALETĘ..."
                 autoFocus
+                autoComplete="off"
               />
-              <button className="bg-green-600 text-white px-6 rounded-xl font-black shadow-md active:bg-green-700">ŁADUJ</button>
+              <button className="w-full bg-green-600 text-white py-6 rounded-xl font-black text-2xl shadow-lg active:scale-95 transition-all">
+                ŁADUJ (ENTER)
+              </button>
             </form>
           </div>
 

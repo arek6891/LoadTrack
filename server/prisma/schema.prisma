@@ -49,6 +49,7 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@index([userId])
+  @@index([createdAt])
 }
 
 enum LoadingStatus {
@@ -70,6 +71,7 @@ model Package {
   @@index([status])
   @@index([palletId])
   @@index([locationId])
+  @@index([createdAt])
 }
 
 model Pallet {
@@ -87,6 +89,7 @@ model Pallet {
   @@index([status])
   @@index([loadingId])
   @@index([locationId])
+  @@index([createdAt])
 }
 
 model Location {
@@ -108,6 +111,8 @@ model Loading {
 
   @@index([status, closedAt])
   @@index([driverName])
+  @@index([vehicleRegistration])
+  @@index([createdAt])
 }
 
 enum TemplateType {

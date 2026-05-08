@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { printLabel } from './printUtils';
+import { useFocusLock } from './hooks/useFocusLock';
 
 interface Package {
   id: string;
@@ -19,6 +20,7 @@ const PalletBuilder: React.FC = () => {
   const [activePallet, setActivePallet] = useState<Pallet | null>(null);
   const [packageNumber, setPackageNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const inputRef = useFocusLock();
 
   const handlePalletSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,16 +85,18 @@ const PalletBuilder: React.FC = () => {
           </h2>
           <form onSubmit={handlePalletSubmit} className="space-y-4">
             <input
+              ref={inputRef}
               type="text"
               value={palletNumber}
               onChange={(e) => setPalletNumber(e.target.value)}
               placeholder="Zeskanuj nr palety..."
-              className="w-full px-4 py-3 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+              className="w-full px-4 py-6 text-3xl border-4 border-blue-500 rounded-xl shadow-inner text-center font-mono font-bold bg-gray-50 focus:border-blue-600 focus:ring-8 focus:ring-blue-100"
               autoFocus
+              autoComplete="off"
             />
             <button
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-4 rounded-md font-bold text-lg hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
+              className="w-full bg-blue-600 text-white py-6 rounded-xl font-black text-2xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all disabled:bg-gray-300 uppercase"
             >
               {loading ? 'Szukanie...' : 'OTWÓRZ / STWÓRZ PALETĘ'}
             </button>
@@ -125,16 +129,18 @@ const PalletBuilder: React.FC = () => {
             <h3 className="text-lg font-bold mb-3 text-gray-800">Dodaj Paczkę</h3>
             <form onSubmit={handlePackageSubmit} className="space-y-4">
               <input
+                ref={inputRef}
                 type="text"
                 value={packageNumber}
                 onChange={(e) => setPackageNumber(e.target.value)}
                 placeholder="Zeskanuj nr paczki..."
-                className="w-full px-4 py-3 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                className="w-full px-4 py-6 text-3xl border-4 border-green-500 rounded-xl shadow-inner text-center font-mono font-bold bg-gray-50 focus:border-green-600 focus:ring-8 focus:ring-green-100"
                 autoFocus
+                autoComplete="off"
               />
               <button
                 disabled={loading}
-                className="w-full bg-green-600 text-white py-4 rounded-md font-bold text-lg hover:bg-green-700 disabled:bg-green-300 transition-colors"
+                className="w-full bg-green-600 text-white py-6 rounded-xl font-black text-2xl shadow-lg hover:bg-green-700 active:scale-95 transition-all disabled:bg-gray-300 uppercase"
               >
                 {loading ? 'Dodawanie...' : 'DODAJ PACZKĘ'}
               </button>

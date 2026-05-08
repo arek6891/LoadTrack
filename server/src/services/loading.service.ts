@@ -104,12 +104,17 @@ export class LoadingService {
       }
     }
 
-    await prisma.loading.update({
+    // Walidacja danych przed zamknięciem
+    if (!loading.driverName || !loading.vehicleRegistration) {
+      throw new Error('Nie można zamknąć załadunku bez danych kierowcy i pojazdu.');
+    }
+
+    const updatedLoading = await prisma.loading.update({
       where: { id },
       data: { status: 'CLOSED', closedAt: new Date() }
     });
 
-    await AuditLogService.create('LOADING', id, 'CLOSED', `Zamknięto załadunek: ${loading.driverName}`, userId);
-    return { message: 'Loading closed successfully' };
+    await AuditLogService.create('LOADING', id, 'CLOSED', `Zamknięto załadunek: ${updatedLoading.driverName}`, userId);
+    return updatedLoading;
   }
 }

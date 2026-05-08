@@ -4,7 +4,7 @@ import * as LocationController from '../controllers/location.controller';
 
 const router = Router();
 
-router.get('/', LocationController.getLocations);
+router.get('/', authenticate, LocationController.getLocations);
 router.post('/', authenticate, authorize(['ADMIN', 'LEADER']), LocationController.createLocation);
 
 export default router;

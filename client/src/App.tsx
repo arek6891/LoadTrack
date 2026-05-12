@@ -14,7 +14,11 @@ import AdminPanel from './AdminPanel';
 import Dashboard from './Dashboard';
 import LoadingHistory from './LoadingHistory';
 import InventoryReport from './InventoryReport';
+import DetailedReport from './DetailedReport';
 import Diagnostics from './Diagnostics';
+import Inventory from './Inventory';
+
+axios.defaults.baseURL = 'http://localhost:3601';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +37,16 @@ function App() {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const savedUser = localStorage.getItem('user');
-      if (savedUser) setUser(JSON.parse(savedUser));
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (e) {
+          console.error("Failed to parse user from storage", e);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setToken(null);
+        }
+      }
     }
   }, [token]);
 
@@ -72,6 +85,7 @@ function App() {
               <NavLink to="/pallets" label="Palety" />
               <NavLink to="/move" label="Ruchy" />
               <NavLink to="/loading" label="Załadunek" />
+              <NavLink to="/inventory" label="Inwentaryzacja" />
               <NavLink to="/search" label="Szukaj" />
               {user?.role === 'ADMIN' && <NavLink to="/diagnostics" label="Testy" highlight />}
               {user?.role === 'ADMIN' && <NavLink to="/admin" label="Admin" highlight />}
@@ -86,7 +100,7 @@ function App() {
             <MobileTab to="/scanner" label="Skanuj" icon="🔍" />
             <MobileTab to="/pallets" label="Palety" icon="📦" />
             <MobileTab to="/" label="Home" icon="🏠" />
-            <MobileTab to="/move" label="Ruchy" icon="🔄" />
+            <MobileTab to="/inventory" label="Stan" icon="📋" />
             <MobileTab to="/loading" label="Wydaj" icon="🚚" />
           </nav>
 
@@ -97,8 +111,10 @@ function App() {
               <Route path="/pallets" element={<PalletBuilder />} />
               <Route path="/move" element={<StockMovement />} />
               <Route path="/loading" element={<LoadingManager />} />
+              <Route path="/inventory" element={<Inventory />} />
               <Route path="/history" element={<LoadingHistory />} />
               <Route path="/report" element={<InventoryReport />} />
+              <Route path="/detailed-report" element={<DetailedReport />} />
               <Route path="/search" element={<Search userRole={user?.role} />} />
               <Route path="/locations" element={<Locations />} />
               {user?.role === 'ADMIN' && <Route path="/admin" element={<AdminPanel />} />}

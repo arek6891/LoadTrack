@@ -29,7 +29,7 @@ Aplikacja została przeniesiona z modelu monolitycznego na nowoczesną **archite
 - [x] Pełna refaktoryzacja backendu na warstwy.
 - [x] Wdrożenie React Query i optymalizacja sync danych.
 - [x] Nowy UI/UX dla skanerów (Focus Lock, Mobile Nav).
-- [x] Zaawansowane raportowanie KPI i eksport XLSX.
+- [x] Zaawansowane raportowanie KPI, **Raport Szczegółowy (z historią twórcy)** i eksport XLSX.
 - [x] System Audit Log z paginacją.
 
 ## 🚀 Co jest do zrobienia (TODO / Future)

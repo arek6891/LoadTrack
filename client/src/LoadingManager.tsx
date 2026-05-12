@@ -17,10 +17,15 @@ const LoadingManager: React.FC = () => {
   const [activeLoading, setActiveLoading] = useState<Loading | null>(null);
   const [driver, setDriver] = useState('');
   const [reg, setReg] = useState('');
-  const [expectedRaw, setExpectedRaw] = useState('');
+  const [availablePallets, setAvailablePallets] = useState<{ id: string, palletNumber: string }[]>([]);
+  const [selectedPallets, setSelectedPallets] = useState<string[]>([]);
+  const [palletSearch, setPalletSearch] = useState('');
   const [palletScan, setPalletScan] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const inputRef = useFocusLock();
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isLeaderOrAdmin = user.role === 'LEADER' || user.role === 'ADMIN';
 
   const fetchLoadings = async () => {
     try {
@@ -31,19 +36,37 @@ const LoadingManager: React.FC = () => {
     }
   };
 
+  const fetchAvailablePallets = async () => {
+    try {
+      const response = await axios.get('/api/pallets/available');
+      setAvailablePallets(response.data);
+    } catch (err) {
+      toast.error('Błąd przy pobieraniu dostępnych palet');
+    }
+  };
+
   useEffect(() => {
     fetchLoadings();
   }, []);
 
+  useEffect(() => {
+    if (isCreating) {
+      fetchAvailablePallets();
+      setDriver('');
+      setReg('');
+      setSelectedPallets([]);
+      setPalletSearch('');
+    }
+  }, [isCreating]);
+
   const handleStartLoading = async (e: React.FormEvent) => {
     e.preventDefault();
-    const expectedPallets = expectedRaw.split(/[\s,]+/).filter(p => p.trim() !== '');
     
     try {
       const response = await axios.post('/api/loadings', {
         driverName: driver,
         vehicleRegistration: reg,
-        expectedPallets
+        expectedPallets: selectedPallets
       });
       setActiveLoading({ ...response.data, pallets: [] });
       setIsCreating(false);
@@ -53,6 +76,18 @@ const LoadingManager: React.FC = () => {
       toast.error(err.response?.data?.error || 'Błąd przy otwieraniu załadunku');
     }
   };
+
+  const togglePalletSelection = (palletNumber: string) => {
+    setSelectedPallets(prev => 
+      prev.includes(palletNumber) 
+        ? prev.filter(p => p !== palletNumber)
+        : [...prev, palletNumber]
+    );
+  };
+
+  const filteredAvailablePallets = availablePallets.filter(p => 
+    p.palletNumber.toLowerCase().includes(palletSearch.toLowerCase())
+  );
 
   const handleScanPallet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,12 +148,14 @@ const LoadingManager: React.FC = () => {
             <h2 className="text-xl font-bold flex items-center">
               <span className="mr-2">🚛</span> Załadunki
             </h2>
-            <button 
-              onClick={() => setIsCreating(true)}
-              className="bg-blue-600 text-white px-4 py-3 rounded-md font-bold text-sm shadow-sm active:bg-blue-700"
-            >
-              + NOWY
-            </button>
+            {isLeaderOrAdmin && (
+              <button 
+                onClick={() => setIsCreating(true)}
+                className="bg-blue-600 text-white px-4 py-3 rounded-md font-bold text-sm shadow-sm active:bg-blue-700"
+              >
+                + NOWY
+              </button>
+            )}
           </div>
           
           <div className="grid gap-3">
@@ -180,12 +217,49 @@ const LoadingManager: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Planowane Palety</label>
-              <textarea 
-                value={expectedRaw} 
-                onChange={e => setExpectedRaw(e.target.value)}
-                className="w-full border-2 border-gray-200 p-3 rounded-lg h-24 font-mono text-sm bg-gray-50 focus:border-blue-500"
-                placeholder="PAL001, PAL002..."
-              />
+              <div className="space-y-2">
+                <input 
+                  type="text" 
+                  value={palletSearch} 
+                  onChange={e => setPalletSearch(e.target.value)}
+                  className="w-full border-2 border-gray-200 p-2 rounded-lg text-sm bg-gray-50 focus:border-blue-500"
+                  placeholder="Szukaj palety..."
+                />
+                <div className="border-2 border-gray-100 rounded-lg max-h-48 overflow-y-auto p-1 bg-gray-50">
+                  {filteredAvailablePallets.length === 0 ? (
+                    <p className="text-center text-xs text-gray-400 py-4">Brak dostępnych palet</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-1">
+                      {filteredAvailablePallets.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => togglePalletSelection(p.palletNumber)}
+                          className={`p-2 rounded text-xs font-bold text-left transition-colors ${
+                            selectedPallets.includes(p.palletNumber)
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                          }`}
+                        >
+                          {p.palletNumber}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selectedPallets.length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Wybrane ({selectedPallets.length}):</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedPallets.map(p => (
+                        <span key={p} className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex gap-2 pt-2">
               <button 
@@ -263,16 +337,18 @@ const LoadingManager: React.FC = () => {
           )}
 
           <div className="flex flex-col gap-2 pt-2">
-            <button 
-              onClick={() => handleCloseLoading()}
-              className={`w-full py-5 rounded-xl font-black text-lg transition-all shadow-lg active:scale-95 ${
-                missingPallets.length === 0 || activeLoading?.expectedPallets.length === 0
-                  ? 'bg-gray-800 text-white'
-                  : 'bg-orange-500 text-white'
-              }`}
-            >
-              {missingPallets.length > 0 ? '❌ ZAMKNIJ Z BRAKAMI' : '✅ ZAMKNIJ I WYDAJ'}
-            </button>
+            {isLeaderOrAdmin && (
+              <button 
+                onClick={() => handleCloseLoading()}
+                className={`w-full py-5 rounded-xl font-black text-lg transition-all shadow-lg active:scale-95 ${
+                  missingPallets.length === 0 || activeLoading?.expectedPallets.length === 0
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-orange-500 text-white'
+                }`}
+              >
+                {missingPallets.length > 0 ? '❌ ZAMKNIJ Z BRAKAMI' : '✅ ZAMKNIJ I WYDAJ'}
+              </button>
+            )}
             <button 
               onClick={() => setActiveLoading(null)}
               className="w-full py-3 text-gray-500 font-bold text-sm"

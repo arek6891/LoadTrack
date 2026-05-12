@@ -27,6 +27,14 @@ Ten plik zawiera listę kontrolną dla kolejnych faz weryfikacji systemu przed i
 - [x] **SQL Injection:** Korzystanie z Prisma ORM minimalizuje ryzyko wstrzyknięć kodu.
 - [x] **Audit Log Protection:** Potwierdzono niemutowalność logów (brak endpointów edycji/usuwania).
 
+## Faza 5: Rozwój Funkcjonalny (Senior Insights) 🚀
+- [x] **Inwentaryzacja (Stocktaking):** Podstawowy moduł sesji i raportowania różnic.
+- [x] **Kontrolowane Planowanie:** Wybór palet z listy IN_STOCK zamiast wpisywania tekstu.
+- [x] **Uprawnienia Lidera:** Restrykcja tworzenia i zamykania transportów.
+- [ ] **Feedback Sensoryczny:** Dodanie sygnałów dźwiękowych przy sukcesie/błędzie.
+- [ ] **PWA & Offline:** Przygotowanie manifestu i service workera dla stabilności połączenia.
+- [ ] **Rozszerzony Dashboard:** Widok "Live Operations" (WebSockets).
+
 # 🏁 PODSUMOWANIE AUDYTU TECHNICZNEGO
 System LoadTrack przeszedł pełną ścieżkę optymalizacji:
 1. **UX:** Skanowanie bezdotykowe, wibracje, wielkie przyciski.

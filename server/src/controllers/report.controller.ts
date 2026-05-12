@@ -6,3 +6,8 @@ export const getInventoryReport = asyncHandler(async (req: Request, res: Respons
   const reportData = await ReportService.getInventoryReport();
   res.json(reportData);
 });
+
+export const getDetailedReport = asyncHandler(async (req: Request, res: Response) => {
+  const reportData = await ReportService.getDetailedReport();
+  res.json(reportData);
+});

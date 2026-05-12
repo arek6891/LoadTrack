@@ -9,6 +9,11 @@ export const getPallet = asyncHandler(async (req: Request, res: Response) => {
   res.json(pallet);
 });
 
+export const getAvailablePallets = asyncHandler(async (req: Request, res: Response) => {
+  const pallets = await PalletService.getAvailablePallets();
+  res.json(pallets);
+});
+
 export const createPallet = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { palletNumber } = createPalletSchema.parse(req.body);
   const newPallet = await PalletService.createPallet(palletNumber, req.user!.id);

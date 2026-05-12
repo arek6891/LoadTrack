@@ -115,6 +115,35 @@ model Loading {
   @@index([createdAt])
 }
 
+model InventorySession {
+  id        String           @id @default(uuid())
+  status    InventoryStatus  @default(OPEN)
+  createdBy String
+  createdAt DateTime         @default(now())
+  closedAt  DateTime?
+  counts    InventoryCount[]
+
+  @@index([status])
+}
+
+model InventoryCount {
+  id               String           @id @default(uuid())
+  sessionId        String
+  session          InventorySession @relation(fields: [sessionId], references: [id])
+  palletNumber     String
+  locationName     String
+  scannedAt        DateTime         @default(now())
+  isDiscrepancy    Boolean          @default(false)
+
+  @@index([sessionId])
+  @@index([palletNumber])
+}
+
+enum InventoryStatus {
+  OPEN
+  CLOSED
+}
+
 enum TemplateType {
   PACKAGE
   PALLET

@@ -24,9 +24,11 @@ System WMS do skanowania paczek i zarządzania paletami.
 - **Konfigurowalne Szablony Etykiet:** System CRUD dla szablonów HTML/CSS z obsługą placeholderów.
 - **Drukowanie:** Integracja z drukarkami (podgląd i druk) dla paczek i palet z poziomu UI.
 - **Walidacja Załadunku:** Weryfikacja kompletności transportu względem planowanej listy palet (expectedPallets).
-- **Logi Operacji:** Pełny system Audit Log rejestrujący historię zmian statusów, ruchów i akcji użytkowników (kto, co, kiedy).
-- **Optymalizacja Mobile:** Interfejs w pełni dostosowany do skanerów ręcznych (duże przyciski, czytelne fonty, ergonomiczny layout).
-- **Importy masowe:** Możliwość importu list paczek/palet z plików zewnętrznych (Excel/CSV) bezpośrednio do bazy danych.
+- **Logi Operacji:** Pełny system Audit Log rejestrujący historię zmian statusów, ruchów i akcji użytkowników.
+- **Optymalizacja Mobile:** Interfejs w pełni dostosowany do skanerów ręcznych.
+- **Importy masowe:** Możliwość importu list paczek/palet z plików zewnętrznych.
+- **Inwentaryzacja (Stocktaking):** Moduł weryfikacji stanu faktycznego z systemowym, raportowanie rozbieżności i braków.
+- **Planowanie Załadunku:** Searchable selection dla planowanych palet (tylko status IN_STOCK) z uprawnieniami dla Liderów/Adminów.
 
 ## Kluczowe Zasady (Mandaty)
 1. **Unikalność:** `trackingNumber` i `palletNumber` muszą być unikalne.

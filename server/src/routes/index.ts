@@ -11,6 +11,7 @@ import reportRoutes from './report.routes';
 import templateRoutes from './template.routes';
 import importRoutes from './import.routes';
 import diagnosticsRoutes from './diagnostics.routes';
+import inventoryRoutes from './inventory.routes';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/reports', reportRoutes);
 router.use('/label-templates', templateRoutes);
 router.use('/import', importRoutes);
 router.use('/diagnostics', diagnosticsRoutes);
+router.use('/inventory', inventoryRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

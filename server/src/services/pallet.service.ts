@@ -11,6 +11,14 @@ export class PalletService {
     return pallet;
   }
 
+  static async getAvailablePallets() {
+    return prisma.pallet.findMany({
+      where: { status: 'IN_STOCK' },
+      select: { id: true, palletNumber: true },
+      orderBy: { palletNumber: 'asc' }
+    });
+  }
+
   static async createPallet(palletNumber: string, userId: string) {
     const newPallet = await prisma.pallet.create({
       data: { palletNumber },

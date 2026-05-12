@@ -40,6 +40,21 @@ export class LoadingService {
   }
 
   static async createLoading(data: any, userId: string) {
+    if (data.expectedPallets && data.expectedPallets.length > 0) {
+      const existingPallets = await prisma.pallet.findMany({
+        where: {
+          palletNumber: { in: data.expectedPallets },
+          status: 'IN_STOCK'
+        }
+      });
+
+      if (existingPallets.length !== data.expectedPallets.length) {
+        const foundNumbers = existingPallets.map(p => p.palletNumber);
+        const missingNumbers = data.expectedPallets.filter((p: string) => !foundNumbers.includes(p));
+        throw new Error(`Niektóre palety są nieprawidłowe lub niedostępne: ${missingNumbers.join(', ')}`);
+      }
+    }
+
     const newLoading = await prisma.loading.create({
       data: { 
         driverName: data.driverName, 

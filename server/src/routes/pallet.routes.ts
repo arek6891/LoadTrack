@@ -4,6 +4,7 @@ import * as PalletController from '../controllers/pallet.controller';
 
 const router = Router();
 
+router.get('/available', authenticate, PalletController.getAvailablePallets);
 router.get('/:palletNumber', authenticate, PalletController.getPallet);
 router.post('/', authenticate, PalletController.createPallet);
 router.post('/add-package', authenticate, PalletController.addPackage);

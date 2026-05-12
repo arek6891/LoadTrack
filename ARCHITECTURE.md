@@ -30,8 +30,10 @@ System WMS do ewidencji paczek i palet, zarządzania lokalizacjami oraz monitoro
 *   `/api/move/pallet`: Przypisywanie palet do lokalizacji.
 *   `/api/loadings`: Obsługa transportów i walidacja kompletności.
 *   `/api/label-templates`: Zarządzanie szablonami etykiet (CRUD).
-*   `/api/search`: Globalna wyszukiwarka towaru.
+* `/api/search`: Globalna wyszukiwarka towaru.
+* `/api/reports/detailed`: Zaawansowana agregacja danych z tabel `Package`, `Pallet`, `Loading` oraz `AuditLog` (historia twórcy i aktualny status).
 
 ## 6. Bezpieczeństwo
+
 *   Hasła są hashowane za pomocą `bcryptjs`.
 *   Schemat bazy `loadtrack` zapewnia izolację od innych aplikacji na tym samym serwerze DB.

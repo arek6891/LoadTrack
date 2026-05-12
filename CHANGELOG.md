@@ -31,6 +31,9 @@ Aplikacja została przeniesiona z modelu monolitycznego na nowoczesną **archite
 - [x] Nowy UI/UX dla skanerów (Focus Lock, Mobile Nav).
 - [x] Zaawansowane raportowanie KPI, **Raport Szczegółowy (z historią twórcy)** i eksport XLSX.
 - [x] System Audit Log z paginacją.
+- [x] **NAPRAWA (Maj 2026):** Rozwiązanie problemu "White Screen" na Dashboardzie (bezpieczne mapowanie danych).
+- [x] **NAPRAWA (Maj 2026):** Fix wyścigu (race condition) przy autoryzacji i przywrócenie poprawnego routingu API w trybie produkcyjnym.
+
 
 ## 🚀 Co jest do zrobienia (TODO / Future)
 - [ ] **Walidacja Regex:** Wprowadzenie wzorców dla kodów paczek (np. blokada kodów spoza standardu firmy).

@@ -18,7 +18,12 @@ import DetailedReport from './DetailedReport';
 import Diagnostics from './Diagnostics';
 import Inventory from './Inventory';
 
+// Configure axios
 axios.defaults.baseURL = 'http://localhost:3601';
+const tokenFromStorage = localStorage.getItem('token');
+if (tokenFromStorage) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${tokenFromStorage}`;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,11 +36,10 @@ const queryClient = new QueryClient({
 
 function App() {
   const [user, setUser] = useState<any>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(tokenFromStorage);
 
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const savedUser = localStorage.getItem('user');
       if (savedUser) {
         try {

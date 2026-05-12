@@ -26,14 +26,14 @@ export default function Dashboard() {
   );
   if (isError || !stats) return <div className="text-center p-10 text-red-600 font-bold bg-red-50 rounded-xl">Błąd ładowania danych statystycznych.</div>;
 
-  const getCount = (arr: { status: string; _count: number }[], status: string) => {
-    return arr.find(i => i.status === status)?._count || 0;
+  const getCount = (arr: { status: string; _count: number }[] | undefined, status: string) => {
+    return arr?.find(i => i.status === status)?._count || 0;
   };
 
-  const inStockPackages = getCount(stats.packages, 'IN_STOCK');
-  const loadedPackages = getCount(stats.packages, 'LOADED');
-  const inStockPallets = getCount(stats.pallets, 'IN_STOCK');
-  const loadedPalletsTotal = getCount(stats.pallets, 'LOADED');
+  const inStockPackages = getCount(stats?.packages, 'IN_STOCK');
+  const loadedPackages = getCount(stats?.packages, 'LOADED');
+  const inStockPallets = getCount(stats?.pallets, 'IN_STOCK');
+  const loadedPalletsTotal = getCount(stats?.pallets, 'LOADED');
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -52,8 +52,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Paczki (Magazyn)" value={inStockPackages} subValue={`${loadedPackages} wydano`} color="blue" icon="📦" />
         <StatCard title="Palety (Magazyn)" value={inStockPallets} subValue={`${loadedPalletsTotal} wydano`} color="green" icon="🧱" />
-        <StatCard title="Zajętość Regałów" value={`${stats.locations.occupied} / ${stats.locations.total}`} subValue={`${Math.round((stats.locations.occupied / stats.locations.total) * 100) || 0}%`} color="purple" icon="📍" />
-        <StatCard title="Dzisiejsze Wydania" value={stats.today.loadedPallets} subValue={`${stats.today.closedLoadings} transporty`} color="orange" icon="🚚" />
+        <StatCard title="Zajętość Regałów" value={`${stats?.locations?.occupied || 0} / ${stats?.locations?.total || 0}`} subValue={`${Math.round(((stats?.locations?.occupied || 0) / (stats?.locations?.total || 1)) * 100) || 0}%`} color="purple" icon="📍" />
+        <StatCard title="Dzisiejsze Wydania" value={stats?.today?.loadedPallets || 0} subValue={`${stats?.today?.closedLoadings || 0} transporty`} color="orange" icon="🚚" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
